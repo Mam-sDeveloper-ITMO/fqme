@@ -2,7 +2,6 @@ package fqme.model;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -82,19 +81,18 @@ public abstract class Model<T extends Model<T>> {
     }
 
     /**
-     * Initialize model from ResultSet.
+     * Initialize model from objects array with values of fields in proper order.
+     * Use for instantiating from ResultSet
+     *
+     * @see View
+     *
+     * @param objects    Array of fields values
+     * @param modelClass subclass of Model
+     * @return Model instance
      */
-    public static <K extends Model<K>> K fromResultSet(ResultSet resultSet, Class<K> modelClass) throws Exception {
+    public static <K extends Model<K>> K fromFieldsValues(Object[] objects, Class<K> modelClass) throws Exception {
         ModelMetaInfo metaInfo = Model.getModelMetaInfo(modelClass);
-
         Constructor<K> constructor = modelClass.getConstructor(metaInfo.getFieldsTypes());
-
-        Object[] fieldsValues = new Object[metaInfo.getColumnsNames().size()];
-        for (int i = 0; i < metaInfo.getColumnsNames().size(); i++) {
-            String columnName = metaInfo.getColumnsNames().get(i);
-            fieldsValues[i] = resultSet.getObject(columnName);
-        }
-
-        return constructor.newInstance(fieldsValues);
+        return constructor.newInstance(objects);
     }
 }

@@ -42,14 +42,13 @@ public class ModelTest {
 
     @Test
     public void testFromResultSet() throws Exception {
-        // Create a mock ResultSet with sample data
-        ResultSet resultSet = Mockito.mock(ResultSet.class);
-        Mockito.when(resultSet.getObject("name")).thenReturn("test");
-        Mockito.when(resultSet.getObject("x")).thenReturn(1);
-        Mockito.when(resultSet.getObject("y")).thenReturn(2);
+        // Create array with sample data
+        Object[] fieldValues = new Object[] { "test", 1, 2 };
+        // Create mock ResultSet
+
 
         // Call the fromResultSet method and verify the model instance
-        TestModel model = Model.fromResultSet(resultSet, TestModel.class);
+        TestModel model = Model.fromFieldsValues(fieldValues, TestModel.class);
         assertNotNull(model);
         assertEquals("test", model.getName());
         assertEquals(1, model.getX());
