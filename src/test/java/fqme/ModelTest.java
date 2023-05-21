@@ -33,8 +33,8 @@ public class ModelTest {
         assertEquals("test", metaInfo.getTableName());
         assertEquals(3, metaInfo.getColumnsNames().size());
         assertEquals("name", metaInfo.getColumnsNames().get(0));
-        assertEquals(3, metaInfo.getFieldsTypes().size());
-        assertEquals(String.class, metaInfo.getFieldsTypes().get(0));
+        assertEquals(3, metaInfo.getFieldsTypes().length);
+        assertEquals(String.class, metaInfo.getFieldsTypes()[0]);
         assertEquals(3, metaInfo.getFields().size());
         assertTrue(metaInfo.getFields().containsKey("x"));
         assertTrue(metaInfo.getFields().containsKey("y"));

@@ -37,7 +37,8 @@ public abstract class Model<T extends Model<T>> {
      * @param modelClass model subclass
      * @param configPath path to config file
      */
-    public static void register(Class<? extends Model<?>> modelClass, DBConfig dbConfig) throws NoSuchFieldException, IllegalAccessException {
+    public static void register(Class<? extends Model<?>> modelClass, DBConfig dbConfig)
+            throws NoSuchFieldException, IllegalAccessException {
         // generate table name from class name
         String tableName = modelClass.getSimpleName().replaceFirst("Model$", "").toLowerCase();
 
@@ -45,7 +46,7 @@ public abstract class Model<T extends Model<T>> {
         List<String> columnsNames = new ArrayList<>();
 
         // HashMap<String, Class<?>> fieldsTypes = new HashMap<>();
-        List<Class<?>> fieldsTypes = new ArrayList<>();
+        List<Class<?>> fieldsTypesList = new ArrayList<>();
         Map<String, Field> fields = new HashMap<>();
         for (Field field : classFields) {
             if (Column.class.isAssignableFrom(field.getType())) {
@@ -55,13 +56,16 @@ public abstract class Model<T extends Model<T>> {
 
                 // add type of field
                 Class<?> fieldType = modelClass.getDeclaredField(column.getName()).getType();
-                fieldsTypes.add(fieldType);
+                fieldsTypesList.add(fieldType);
 
                 // add field to dataFields
                 fields.put(column.getName(), field);
             }
         }
-
+        Class<?>[] fieldsTypes = new Class<?>[fieldsTypesList.size()];
+        for (int i = 0; i < fieldsTypesList.size(); i++) {
+            fieldsTypes[i] = fieldsTypesList.get(i);
+        }
         // store model subclass meta info
         ModelMetaInfo metaInfo = new ModelMetaInfo(tableName, columnsNames, fieldsTypes, fields, dbConfig);
         modelsMetaInfo.put(modelClass, metaInfo);
@@ -83,14 +87,10 @@ public abstract class Model<T extends Model<T>> {
     public static <K extends Model<K>> K fromResultSet(ResultSet resultSet, Class<K> modelClass) throws Exception {
         ModelMetaInfo metaInfo = Model.getModelMetaInfo(modelClass);
 
-        Class<?>[] fieldsTypes = new Class<?>[metaInfo.getFieldsTypes().size()];
-        for (int i = 0; i < metaInfo.getFieldsTypes().size(); i++) {
-            fieldsTypes[i] = metaInfo.getFieldsTypes().get(i);
-        }
-        Constructor<K> constructor = modelClass.getConstructor(fieldsTypes);
+        Constructor<K> constructor = modelClass.getConstructor(metaInfo.getFieldsTypes());
 
-        Object[] fieldsValues = new Object[metaInfo.getFieldsTypes().size()];
-        for (int i = 0; i < metaInfo.getFieldsTypes().size(); i++) {
+        Object[] fieldsValues = new Object[metaInfo.getColumnsNames().size()];
+        for (int i = 0; i < metaInfo.getColumnsNames().size(); i++) {
             String columnName = metaInfo.getColumnsNames().get(i);
             fieldsValues[i] = resultSet.getObject(columnName);
         }
