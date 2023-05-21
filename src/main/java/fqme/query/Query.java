@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**

@@ -1,13 +1,13 @@
 package fqme.model;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import fqme.column.Column;
 import fqme.column.common.NumericColumn;
@@ -37,26 +37,28 @@ public abstract class Model<T extends Model<T>> {
      * @param modelClass model subclass
      * @param configPath path to config file
      */
-    public static void register(Class<? extends Model<?>> modelClass, DBConfig dbConfig) throws NoSuchFieldException {
+    public static void register(Class<? extends Model<?>> modelClass, DBConfig dbConfig) throws NoSuchFieldException, IllegalAccessException {
         // generate table name from class name
         String tableName = modelClass.getSimpleName().replaceFirst("Model$", "").toLowerCase();
 
-        // get names of model columns (@see Column) and suppliers for model fields
         Field[] classFields = modelClass.getDeclaredFields();
-        ArrayList<String> columnsNames = new ArrayList<>();
-        HashMap<String, Class<?>> fieldsTypes = new HashMap<>();
-        HashMap<String, Field> fields = new HashMap<>();
+        List<String> columnsNames = new ArrayList<>();
+
+        // HashMap<String, Class<?>> fieldsTypes = new HashMap<>();
+        List<Class<?>> fieldsTypes = new ArrayList<>();
+        Map<String, Field> fields = new HashMap<>();
         for (Field field : classFields) {
             if (Column.class.isAssignableFrom(field.getType())) {
+                Column<?> column = (Column<?>) field.get(null);
                 // add name of Column
-                columnsNames.add(field.getName());
+                columnsNames.add(column.getName());
 
                 // add type of field
-                Class<?> fieldType = field.getType().getDeclaredField("value").getType();
-                fieldsTypes.put(field.getName(), fieldType);
+                Class<?> fieldType = modelClass.getDeclaredField(column.getName()).getType();
+                fieldsTypes.add(fieldType);
 
                 // add field to dataFields
-                fields.put(field.getName(), field);
+                fields.put(column.getName(), field);
             }
         }
 
@@ -73,5 +75,26 @@ public abstract class Model<T extends Model<T>> {
      */
     public static ModelMetaInfo getModelMetaInfo(Class<? extends Model<?>> modelClass) {
         return Model.modelsMetaInfo.get(modelClass);
+    }
+
+    /**
+     * Initialize model from ResultSet.
+     */
+    public static <K extends Model<K>> K fromResultSet(ResultSet resultSet, Class<K> modelClass) throws Exception {
+        ModelMetaInfo metaInfo = Model.getModelMetaInfo(modelClass);
+
+        Class<?>[] fieldsTypes = new Class<?>[metaInfo.getFieldsTypes().size()];
+        for (int i = 0; i < metaInfo.getFieldsTypes().size(); i++) {
+            fieldsTypes[i] = metaInfo.getFieldsTypes().get(i);
+        }
+        Constructor<K> constructor = modelClass.getConstructor(fieldsTypes);
+
+        Object[] fieldsValues = new Object[metaInfo.getFieldsTypes().size()];
+        for (int i = 0; i < metaInfo.getFieldsTypes().size(); i++) {
+            String columnName = metaInfo.getColumnsNames().get(i);
+            fieldsValues[i] = resultSet.getObject(columnName);
+        }
+
+        return constructor.newInstance(fieldsValues);
     }
 }

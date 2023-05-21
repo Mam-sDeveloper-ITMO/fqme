@@ -28,9 +28,10 @@ public class ModelMetaInfo {
     private final List<String> columnsNames;
 
     /**
-     * Map with types of data fields.
+     * List of fields types.
+     * Used for instantiating model objects.
      */
-    private final Map<String, Class<?>> fieldsTypes;
+    private final List<Class<?>> fieldsTypes;
 
     /**
      * Map with models fields that contains columns data.
