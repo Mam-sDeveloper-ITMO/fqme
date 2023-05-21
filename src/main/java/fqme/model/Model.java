@@ -1,6 +1,9 @@
 package fqme.model;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -41,28 +44,24 @@ public abstract class Model<T extends Model<T>> {
         // get names of model columns (@see Column) and suppliers for model fields
         Field[] classFields = modelClass.getDeclaredFields();
         ArrayList<String> columnsNames = new ArrayList<>();
-        HashMap<String, Function<? extends Model<?>, ?>> fieldsSuppliers = new HashMap<>();
+        HashMap<String, Class<?>> fieldsTypes = new HashMap<>();
+        HashMap<String, Field> fields = new HashMap<>();
         for (Field field : classFields) {
             if (Column.class.isAssignableFrom(field.getType())) {
                 // add name of Column
                 columnsNames.add(field.getName());
 
-                // add supplier for field associated with Column
-                Field dataField = modelClass.getField(field.getName());
-                Function<? extends Model<?>, ?> supplier = (model) -> {
-                    try {
-                        return dataField.get(model);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                };
-                fieldsSuppliers.put(field.getName(), supplier);
+                // add type of field
+                Class<?> fieldType = field.getType().getDeclaredField("value").getType();
+                fieldsTypes.put(field.getName(), fieldType);
+
+                // add field to dataFields
+                fields.put(field.getName(), field);
             }
         }
 
         // store model subclass meta info
-        ModelMetaInfo metaInfo = new ModelMetaInfo(tableName, columnsNames, fieldsSuppliers, dbConfig);
+        ModelMetaInfo metaInfo = new ModelMetaInfo(tableName, columnsNames, fieldsTypes, fields, dbConfig);
         modelsMetaInfo.put(modelClass, metaInfo);
     }
 

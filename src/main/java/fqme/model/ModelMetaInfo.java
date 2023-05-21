@@ -1,8 +1,8 @@
 package fqme.model;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import fqme.connection.DBConfig;
 import lombok.Data;
@@ -10,9 +10,9 @@ import lombok.Data;
 /**
  * Meta info for modelClass.
  *
- * Contains table name, columns names, fields supplier and database connection
- * details.
- * Stored statically on Model class @see fqme.model.Model
+ * Stored statically on Model class
+ *
+ * @see fqme.model.Model
  */
 @Data
 public class ModelMetaInfo {
@@ -28,9 +28,14 @@ public class ModelMetaInfo {
     private final List<String> columnsNames;
 
     /**
-     * List of fields suppliers.
+     * Map with types of data fields.
      */
-    private final Map<String, Function<? extends Model<?>, ?>> fieldsSuppliers;
+    private final Map<String, Class<?>> fieldsTypes;
+
+    /**
+     * Map with models fields that contains columns data.
+     */
+    private final Map<String, Field> fields;
 
     /**
      * Database connection details.
