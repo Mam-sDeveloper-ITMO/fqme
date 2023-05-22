@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "ViewTest",
+            "request": "launch",
+            "mainClass": "fqme.integration.ViewTest",
+            "projectName": "fqme"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}",
