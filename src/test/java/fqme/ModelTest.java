@@ -17,7 +17,6 @@ import fqme.model.ModelMetaInfo;
 import fqme.utils.TestModel;
 
 public class ModelTest {
-
     @BeforeAll
     public static void setUp() throws NoSuchFieldException, IllegalAccessException {
         // Register the model subclass for testing

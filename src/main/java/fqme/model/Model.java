@@ -38,15 +38,17 @@ public abstract class Model<T extends Model<T>> {
      */
     public static void register(Class<? extends Model<?>> modelClass, DBConfig dbConfig)
             throws NoSuchFieldException, IllegalAccessException {
-        // generate table name from class name
         String tableName = modelClass.getSimpleName().replaceFirst("Model$", "").toLowerCase();
-
+        // get all fields of model class
         Field[] classFields = modelClass.getDeclaredFields();
         List<String> columnsNames = new ArrayList<>();
-
-        // HashMap<String, Class<?>> fieldsTypes = new HashMap<>();
+        // list of fields types
         List<Class<?>> fieldsTypesList = new ArrayList<>();
+        // map with columns names as keys and their types as values
+        Map<String, Class<?>> columnsTypes = new HashMap<>();
+        // map with models fields that contains columns data
         Map<String, Field> fields = new HashMap<>();
+        // iterate over all fields
         for (Field field : classFields) {
             if (Column.class.isAssignableFrom(field.getType())) {
                 Column<?> column = (Column<?>) field.get(null);
@@ -59,6 +61,9 @@ public abstract class Model<T extends Model<T>> {
 
                 // add field to dataFields
                 fields.put(column.getName(), field);
+
+                // add column type
+                columnsTypes.put(column.getName(), fieldType);
             }
         }
         Class<?>[] fieldsTypes = new Class<?>[fieldsTypesList.size()];
@@ -66,7 +71,7 @@ public abstract class Model<T extends Model<T>> {
             fieldsTypes[i] = fieldsTypesList.get(i);
         }
         // store model subclass meta info
-        ModelMetaInfo metaInfo = new ModelMetaInfo(tableName, columnsNames, fieldsTypes, fields, dbConfig);
+        ModelMetaInfo metaInfo = new ModelMetaInfo(tableName, columnsNames, columnsTypes, fieldsTypes, fields, dbConfig);
         modelsMetaInfo.put(modelClass, metaInfo);
     }
 
