@@ -9,7 +9,8 @@
             "name": "ViewTest",
             "request": "launch",
             "mainClass": "fqme.integration.ViewTest",
-            "projectName": "fqme"
+            "projectName": "fqme",
+            "console": "externalTerminal"
         },
         {
             "type": "java",

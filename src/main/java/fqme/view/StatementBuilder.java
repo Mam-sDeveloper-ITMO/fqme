@@ -2,106 +2,150 @@ package fqme.view;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
-import fqme.model.ModelMetaInfo;
+import fqme.column.Column;
+import fqme.model.Model;
+import fqme.model.reflection.ModelReflection;
 import fqme.query.Query;
+import fqme.query.QueryArgument;
 import lombok.RequiredArgsConstructor;
 
-/**
- * StatementBuilder creates sql Statement from Query.
- *
- * @see fqme.query.Query
- * @see java.sql.Statement
- */
 @RequiredArgsConstructor
-public class StatementBuilder {
+public class StatementBuilder<T extends Model<T>> {
     /**
-     * Connection to database.
+     * A model class that is associated with this view.
+     */
+    private final ModelReflection<T> modelReflection;
+
+    /**
+     * A connection to the database.
      */
     private final Connection connection;
 
     /**
-     * Model meta info.
+     * Build a statement for creating a table.
+     *
+     * @return
+     * @throws Exception
      */
-    private final ModelMetaInfo modelMetaInfo;
+    public PreparedStatement buildCreateTableStatement() throws Exception {
+        String tableName = modelReflection.getTableName();
+        List<String> columnsDefinitions = new ArrayList<>();
+        for (Entry<String, Column<?>> entry : modelReflection.getColumns().entrySet()) {
+            String columnName = entry.getKey();
+            Column<?> column = entry.getValue();
+
+            String columnDefinition = "%s %s".formatted(columnName, column.getSqlDefinition());
+            columnsDefinitions.add(columnDefinition);
+
+            if (entry.getValue().isPrimary()) {
+                String primaryColumnIndex = "CONSTRAINT %s_%s_unique UNIQUE (%s)"
+                        .formatted(tableName, columnName, columnName);
+
+                columnsDefinitions.add(primaryColumnIndex);
+            }
+        }
+        String sql = "CREATE TABLE IF NOT EXISTS %s (%s)"
+                .formatted(tableName, String.join(", ", columnsDefinitions));
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        return statement;
+    }
 
     /**
-     * Create Statement from Query.
+     * Build a statement for getting many models by a query.
      *
-     * @param query Query to create Statement from.
-     * @return Statement from Query.
-     * @throws SQLException
+     * @param query a query
+     * @return a statement
+     * @throws Exception
      */
-    public PreparedStatement fromQuery(Query query) throws SQLException {
-        PreparedStatement statement = this.connection.prepareStatement(query.getWhereClause());
-        for (int i = 0; i < query.getWhereArgs().size(); i++) {
-            Object arg = query.getWhereArgs().get(i);
-            if (arg instanceof String) {
-                statement.setString(i + 1, (String) arg);
-            } else if (arg instanceof Integer) {
-                statement.setInt(i + 1, (Integer) arg);
-            } else if (arg instanceof Long) {
-                statement.setLong(i + 1, (Long) arg);
-            } else if (arg instanceof Double) {
-                statement.setDouble(i + 1, (Double) arg);
-            } else if (arg instanceof Boolean) {
-                statement.setBoolean(i + 1, (Boolean) arg);
-            } else if (arg instanceof LocalDateTime) {
-                statement.setTimestamp(i, Timestamp.valueOf((LocalDateTime) arg));
-            } else if (arg == null) {
-                statement.setNull(i + 1, java.sql.Types.NULL);
-            } else {
-                throw new SQLException("Unsupported type: " + arg.getClass().getName());
-            }
+    public PreparedStatement buildGetStatement(Query query) throws Exception {
+        String sql = "SELECT * FROM %s WHERE %s"
+                .formatted(modelReflection.getTableName(), query.getWhereClause());
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        List<QueryArgument<?>> whereArgs = query.getWhereArgs();
+        for (Integer index = 0; index < whereArgs.size(); index++) {
+            QueryArgument<?> argument = whereArgs.get(index);
+            argument.getColumn().setToStatement(statement, index + 1, argument.getValue());
         }
         return statement;
     }
 
     /**
-     * Create Statement for table creation.
+     * Build a statement for deleting models.
+     *
+     * @param query a query
+     * @return a statement
+     * @throws Exception
      */
-    public PreparedStatement forTableCreation() throws SQLException {
-        StringBuilder sqlExpression = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
-        sqlExpression.append(this.modelMetaInfo.getTableName());
-        sqlExpression.append(" (id SERIAL PRIMARY KEY");
-        for (String columnName : this.modelMetaInfo.getColumnsNames()) {
-            sqlExpression.append(", ");
-            sqlExpression.append(columnName);
-            sqlExpression.append(" ");
-            Class<?> columnType = this.modelMetaInfo.getColumnsTypes().get(columnName);
-            if (columnType == String.class) {
-                sqlExpression.append("TEXT");
-            } else if (columnType == Integer.class) {
-                sqlExpression.append("INTEGER");
-            } else if (columnType == Long.class) {
-                sqlExpression.append("BIGINT");
-            } else if (columnType == Double.class) {
-                sqlExpression.append("DOUBLE PRECISION");
-            } else if (columnType == Boolean.class) {
-                sqlExpression.append("BOOLEAN");
-            } else if (columnType == LocalDateTime.class) {
-                sqlExpression.append("TIMESTAMP");
-            } else {
-                throw new SQLException("Unsupported type: " + columnType.getName());
-            }
+    public PreparedStatement buildDeleteStatement(Query query) throws Exception {
+        String sql = "DELETE FROM %s WHERE %s RETURNING *"
+                .formatted(modelReflection.getTableName(), query.getWhereClause());
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        List<QueryArgument<?>> whereArgs = query.getWhereArgs();
+        for (Integer index = 0; index < whereArgs.size(); index++) {
+            QueryArgument<?> argument = whereArgs.get(index);
+            argument.getColumn().setToStatement(statement, index + 1, argument.getValue());
         }
-        sqlExpression.append(")");
-        return this.connection.prepareStatement(sqlExpression.toString());
+        return statement;
     }
 
     /**
-     * Create Statement for primary key search.
+     * Build statement for inserting model.
+     * If a model already exists, it will be updated.
      *
-     * @param id primary key.
-     * @return Statement for primary key.
+     * @param model a model
+     * @return a prepared statement
      */
-    public PreparedStatement forIdSearch(Integer id) throws SQLException {
-        String sqlExpression = "SELECT * FROM " + this.modelMetaInfo.getTableName() + " WHERE id = ?";
-        PreparedStatement statement = this.connection.prepareStatement(sqlExpression);
-        statement.setInt(1, id);
+    public PreparedStatement buildPutStatement(T model) throws Exception {
+        LinkedHashMap<String, Object> fieldsValues = modelReflection.getFieldsSupplier().getFieldsValues(model);
+
+        LinkedHashMap<String, Column<?>> settableColumns = new LinkedHashMap<>();
+        LinkedHashMap<String, Column<?>> primaryColumns = new LinkedHashMap<>();
+        for (Entry<String, Column<?>> entry : modelReflection.getColumns().entrySet()) {
+            String columnName = entry.getKey();
+            Column<?> column = entry.getValue();
+            Object fieldValue = fieldsValues.get(columnName);
+
+            if (fieldValue == null && column.isNullable()) {
+                continue;
+            } else if (fieldValue == null && !column.isNullable()) {
+                throw new IllegalArgumentException("Column " + columnName + " is not nullable");
+            } else {
+                settableColumns.put(columnName, column);
+            }
+            if (column.isPrimary()) {
+                primaryColumns.put(columnName, column);
+            }
+        }
+        String fieldsNames = String.join(", ", settableColumns.keySet());
+        String placeholders = String.join(", ", Collections.nCopies(settableColumns.size(), "?"));
+        String sql = "INSERT INTO %s (%s) VALUES (%s)"
+                .formatted(modelReflection.getTableName(), fieldsNames, placeholders);
+
+        if (!primaryColumns.isEmpty()) {
+            String conflictClause = String.join(", ", primaryColumns.keySet());
+            String updateClause = String.join(", ", settableColumns.keySet().stream()
+                    .map(columnName -> columnName + " = EXCLUDED." + columnName).toList());
+
+            sql += " ON CONFLICT (%s) DO UPDATE SET %s"
+                    .formatted(conflictClause, updateClause);
+        }
+        sql += " RETURNING *";
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        Integer index = 1;
+        for (Column<?> column : settableColumns.values()) {
+            Object fieldValue = fieldsValues.get(column.getName());
+            column.setToStatement(statement, index++, fieldValue);
+        }
         return statement;
     }
 }

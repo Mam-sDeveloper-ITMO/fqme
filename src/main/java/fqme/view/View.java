@@ -1,110 +1,163 @@
 package fqme.view;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import fqme.connection.ConnectionProvider;
-import fqme.connection.DBConfig;
+import fqme.column.Column;
 import fqme.model.Model;
-import fqme.model.ModelMetaInfo;
-import lombok.Cleanup;
+import fqme.model.reflection.ModelFactory;
+import fqme.model.reflection.ModelReflection;
+import fqme.query.Query;
 
+/**
+ * A class that provides to manipulate model data in the database.
+ *
+ * Example:
+ *
+ * <pre>
+ * {@code
+ * View<User> userView = new View<>(User.class, connection);
+ * Set<User> users = userView.get(User.name_.eq("John"));
+ *
+ * User user = new User("John", "Doe");
+ * Set<User> users = userView.put(user);
+ *
+ * Set<User> users = userView.delete(new Query("id", 1));
+ * }
+ * </pre>
+ */
 public class View<T extends Model<T>> {
     /**
-     * Type of a model that table view will operate on.
+     * A model class that is associated with this view.
      */
-    private final Class<T> modelClass;
+    private final ModelReflection<T> modelReflection;
 
     /**
-     * Meta info for modelClass.
+     * A statement builder that is associated with this view.
      */
-    private final ModelMetaInfo modelMetaInfo;
+    private final StatementBuilder<T> statementBuilder;
 
     /**
-     * Create table view for modelClass.
+     * Create a view of model for given model class and connection.
      *
-     * @param modelClass type of a model that table view will operate on.
+     * @param modelClass a model class
+     * @param connection a connection to the database
      */
-    private View(Class<T> modelClass) {
-        this.modelClass = modelClass;
-        this.modelMetaInfo = Model.getModelMetaInfo(modelClass);
+    public View(Class<T> modelClass, Connection connection) throws Exception {
+        this.modelReflection = Model.getModelReflection(modelClass);
+        this.statementBuilder = new StatementBuilder<>(this.modelReflection, connection);
+
+        createTable();
     }
 
     /**
-     * Create table view for modelClass.
+     * Static View fabric method.
      *
-     * @param <K>        type of a model that table view will operate on.
-     * @param modelClass type of a model that table view will operate on.
-     * @return table view for modelClass.
+     * @param modelClass a model class
+     * @param connection a connection to the database
+     * @return a view of model
      */
-    public static <K extends Model<K>> View<K> of(Class<K> modelClass) {
-        return new View<>(modelClass);
+    public static <K extends Model<K>> View<K> of(Class<K> modelClass, Connection connection) throws Exception {
+        return new View<>(modelClass, connection);
     }
 
     /**
-     * Create table for modelClass.
+     * Get models by a query.
      *
-     * @throws SQLException if table creation fails.
-     * @throws IOException  if modelClass is not registered.
-     * @return true if table was created, false if table already exists.
+     * @param query a query
+     * @return a set of models
+     * @throws Exception
      */
-    public Optional<T> get(Integer id) throws SQLException {
-        initTable();
-        
-        @Cleanup
-        Connection connection = ConnectionProvider.getConnection(this.modelMetaInfo);
-
-        StatementBuilder statementBuilder = new StatementBuilder(connection, this.modelMetaInfo);
-        PreparedStatement statement = statementBuilder.forIdSearch(id);
-
-        ResultSet result = statement.executeQuery();
-        if (result.next()) {
-            Object[] fieldsValues = getResultSetObjects(result, modelMetaInfo.getColumnsNames().size());
-            try {
-                T modelInstance = Model.fromFieldsValues(fieldsValues, modelClass);
-
-                return Optional.of(modelInstance);
-            } catch (Exception e) {
-                return Optional.empty();
-            }
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Create database table for modelClass if it does not exist.
-     *
-     * @throws SQLException if table creation fails.
-     * @throws IOException  if modelClass is not registered.
-     */
-    private void initTable() throws SQLException {
-        @Cleanup
-        Connection connection = ConnectionProvider.getConnection(this.modelMetaInfo);
-
-        StatementBuilder statementBuilder = new StatementBuilder(connection, this.modelMetaInfo);
-        PreparedStatement statement = statementBuilder.forTableCreation();
-
+    public Set<T> get(Query query) throws Exception {
+        PreparedStatement statement = statementBuilder.buildGetStatement(query);
         statement.execute();
+
+        ResultSet resultSet = statement.getResultSet();
+        Set<T> models = new HashSet<>();
+        while (resultSet.next()) {
+            models.add(buildModelFromResultSet(resultSet));
+        }
+        return models;
     }
 
     /**
-     * Get N objects from result set.
-     * Used for instantiating model.
+     * Delete models by a query.
      *
-     * @param resultSet result set to get objects from.
-     * @param count     number of objects to get.
-     * @return array of objects from result set.
+     * @param query a query
+     * @return a set of deleted models
+     * @throws Exception
      */
-    private static Object[] getResultSetObjects(ResultSet resultSet, Integer count) throws SQLException {
-        Object[] objects = new Object[count];
-        for (int i = 0; i < count; i++) {
-            objects[i] = resultSet.getObject(i + 1);
+    public Set<T> delete(Query query) throws Exception {
+        PreparedStatement statement = statementBuilder.buildDeleteStatement(query);
+        statement.execute();
+
+        ResultSet resultSet = statement.getResultSet();
+        Set<T> models = new HashSet<>();
+        while (resultSet.next()) {
+            models.add(buildModelFromResultSet(resultSet));
         }
-        return objects;
+        return models;
+    }
+
+    /**
+     * Put a model.
+     *
+     * @param model a model
+     * @return a set of models
+     * @throws Exception
+     */
+    public Set<T> put(Iterable<T> models) throws Exception {
+        Set<T> result = new HashSet<>();
+        for (T model : models) {
+            PreparedStatement statement = statementBuilder.buildPutStatement(model);
+            statement.executeQuery();
+            ResultSet resultSet = statement.getResultSet();
+            if (resultSet.next()) {
+                result.add(buildModelFromResultSet(resultSet));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Overload of {@link #put(Iterable)} for a single model.
+     *
+     * @param models an array of models
+     * @return a set of models
+     * @throws Exception
+     */
+    public Set<T> put(T model) throws Exception {
+        return put(List.of(model));
+    }
+
+    /**
+     * Build a model from result set.
+     *
+     * @param resultSet a result set
+     * @return a model
+     * @throws Exception
+     */
+    public T buildModelFromResultSet(ResultSet resultSet) throws Exception {
+        List<Object> fields = new ArrayList<>();
+        for (Column<?> column : modelReflection.getColumns().values()) {
+            fields.add(resultSet.getObject(column.getName()));
+        }
+        ModelFactory<T> modelFactory = modelReflection.getModelFactory();
+        return modelFactory.fromFields(fields);
+    }
+
+    /**
+     * Create a table for this view.
+     *
+     * @throws Exception
+     */
+    private void createTable() throws Exception {
+        PreparedStatement statement = statementBuilder.buildCreateTableStatement();
+        statement.execute();
     }
 }

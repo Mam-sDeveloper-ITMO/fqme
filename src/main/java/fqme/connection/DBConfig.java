@@ -1,5 +1,7 @@
 package fqme.connection;
 
+import java.util.Properties;
+
 import lombok.Data;
 
 /**

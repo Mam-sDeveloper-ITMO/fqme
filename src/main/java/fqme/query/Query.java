@@ -1,5 +1,6 @@
 package fqme.query;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,17 +26,29 @@ public class Query {
      * List of arguments for query.
      */
     @NonNull
-    private List<Object> whereArgs;
+    private List<QueryArgument<?>> whereArgs;
 
     /**
      * Constructor.
      *
      * @param whereClause SQL query string.
      * @param whereArgs   List of arguments.
+     *
+     * @see fqme.query.QueryArgument
      */
-    public Query(String whereClause, Object... whereArgs) {
+    public Query(String whereClause, QueryArgument<?>... whereArgs) {
         this.whereClause = whereClause;
-        this.whereArgs = Arrays.asList(whereArgs);
+        this.whereArgs = new ArrayList<>(Arrays.asList(whereArgs));
+    }
+
+    /**
+     * Make negation of this query.
+     *
+     * @return this query with NOT operator.
+     */
+    public Query not() {
+        this.whereClause = "(NOT (%s))".formatted(whereClause);
+        return this;
     }
 
     /**
@@ -44,11 +57,13 @@ public class Query {
      * Also adds the other query's arguments to this one.
      *
      * @param other
-     * @return
+     * @return this query with union of where clause and arguments.
+     *
+     * @see fqme.query.QueryArgument
      */
     public Query and(Query other) {
         this.whereClause = "(%s) AND (%s)".formatted(whereClause, other.whereClause);
-        this.whereArgs.addAll(Arrays.asList(other.whereArgs));
+        this.whereArgs.addAll(other.whereArgs);
         return this;
     }
 
@@ -58,11 +73,13 @@ public class Query {
      * Also adds the other query's arguments to this one.
      *
      * @param other
-     * @return
+     * @return this query with union of where clause and arguments.
+     *
+     * @see fqme.query.QueryArgument
      */
     public Query or(Query other) {
         this.whereClause = "(%s) OR (%s)".formatted(whereClause, other.whereClause);
-        this.whereArgs.addAll(Arrays.asList(other.whereArgs));
+        this.whereArgs.addAll(other.whereArgs);
         return this;
     }
 }
