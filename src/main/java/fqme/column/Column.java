@@ -61,12 +61,12 @@ public abstract class Column<T> {
     private final Set<String> modifiers = new HashSet<>();
 
     /**
-     * Return copy of modifiers list.
+     * Return copy of modifiers set.
      *
-     * @return copy of modifiers list.
+     * @return copy of modifiers set.
      */
-    public List<String> getModifiers() {
-        return List.copyOf(this.modifiers);
+    public Set<String> getModifiers() {
+        return new HashSet<>(this.modifiers);
     }
 
     /**
