@@ -116,15 +116,16 @@ public class StatementBuilder<T extends Model<T>> {
             Column<?> column = entry.getValue();
             Object fieldValue = fieldsValues.get(columnName);
 
+            if (column.isPrimary()) {
+                primaryColumns.put(columnName, column);
+            }
+
             if (fieldValue == null && column.isNullable()) {
                 continue;
             } else if (fieldValue == null && !column.isNullable()) {
                 throw new IllegalArgumentException("Column " + columnName + " is not nullable");
             } else {
                 settableColumns.put(columnName, column);
-            }
-            if (column.isPrimary()) {
-                primaryColumns.put(columnName, column);
             }
         }
         String fieldsNames = String.join(", ", settableColumns.keySet());
