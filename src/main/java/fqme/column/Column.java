@@ -1,9 +1,12 @@
 package fqme.column;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
 import lombok.AccessLevel;
@@ -152,8 +155,9 @@ public abstract class Column<T> {
      *
      * @param value value from the database.
      * @return value in java type.
+     * @throws UnsupportedSqlType if value cannot be converted.
      */
-    public abstract T fromSqlType(Object value) throws Exception;
+    public abstract T fromSqlType(Object value) throws UnsupportedSqlType;
 
     /**
      * Set column to statement
@@ -161,8 +165,10 @@ public abstract class Column<T> {
      * @param statement statement to set column to.
      * @param index     index of the column in the statement.
      * @param value     value to set.
+     * @throws UnsupportedValueType if value cannot be converted.
      */
-    public abstract void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception;
+    public abstract void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException;
 
     /**
      * Return query for equal comparison.

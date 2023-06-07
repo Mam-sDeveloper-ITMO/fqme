@@ -7,6 +7,10 @@ import java.util.List;
 
 import fqme.column.Column;
 import fqme.model.Model;
+import fqme.model.exceptions.CannotAccessModelColumn;
+import fqme.model.exceptions.CannotGetFieldValue;
+import fqme.model.exceptions.CannotInstantiateModel;
+import fqme.model.exceptions.SuitableConstructorNotFound;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +98,7 @@ public class ModelReflection<T extends Model<T>> {
                     Column<?> column = (Column<?>) field.get(null);
                     columns.put(column.getName(), column);
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                    throw new CannotAccessModelColumn(e);
                 }
             }
         }
@@ -116,6 +120,7 @@ public class ModelReflection<T extends Model<T>> {
         List<Field> columnsDataFields = List.of(fields).stream()
                 .filter(field -> field.isAnnotationPresent(ColumnData.class))
                 .toList();
+
         return (model) -> {
             LinkedHashMap<String, Object> fieldsValues = new LinkedHashMap<>();
             for (Field field : columnsDataFields) {
@@ -124,7 +129,7 @@ public class ModelReflection<T extends Model<T>> {
                     Object fieldValue = field.get(model);
                     fieldsValues.put(field.getName(), fieldValue);
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                    throw new CannotGetFieldValue(e);
                 }
             }
             return fieldsValues;
@@ -151,14 +156,14 @@ public class ModelReflection<T extends Model<T>> {
         try {
             constructor = modelClass.getConstructor(columnsTypes);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new SuitableConstructorNotFound();
         }
 
         return (fieldsValues) -> {
             try {
                 return constructor.newInstance(fieldsValues.toArray());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new CannotInstantiateModel(e);
             }
         };
     }

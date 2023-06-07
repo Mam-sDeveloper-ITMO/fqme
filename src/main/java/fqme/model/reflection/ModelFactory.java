@@ -3,6 +3,8 @@ package fqme.model.reflection;
 import java.util.List;
 
 import fqme.model.Model;
+import fqme.model.exceptions.CannotInstantiateModel;
+import fqme.model.exceptions.SuitableConstructorNotFound;
 
 /**
  * A functional interface that allows to create a model from a list of fields.
@@ -18,7 +20,8 @@ public interface ModelFactory<T extends Model<T>> {
      *
      * @param fields a list of fields
      * @return a model
-     * @throws Exception
+     * @throws CannotInstantiateModel      if a model cannot be instantiated
+     * @throws SuitableConstructorNotFound if suitable constructor not exists
      */
-    T fromFields(List<Object> fields) throws Exception;
+    T fromFields(List<Object> fields) throws CannotInstantiateModel, SuitableConstructorNotFound;
 }

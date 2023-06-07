@@ -1,6 +1,10 @@
 package fqme.column.common.numeric;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 
 /**
  * Column realization for serial values.
@@ -47,10 +51,14 @@ public class SerialColumn extends IntegerColumn {
      *
      * @param value expect Integer
      * @return value converted to the java Integer type.
+     * @throws UnsupportedSqlType if value is not Integer.
      */
     @Override
-    public Integer fromSqlType(Object value) {
-        return (Integer) value;
+    public Integer fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        throw new UnsupportedSqlType("Expected Integer got %s instead.".formatted(value.getClass().getName()));
     }
 
     /**
@@ -59,9 +67,15 @@ public class SerialColumn extends IntegerColumn {
      * @param statement statement to set column to.
      * @param index     index of the column in the statement.
      * @param value     expect Integer value.
+     * @throws UnsupportedValueType if value is not Integer.
      */
     @Override
-    public void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception {
-        statement.setInt(index, (Integer) value);
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
+        if (value instanceof Integer) {
+            statement.setInt(index, (Integer) value);
+        } else {
+            throw new UnsupportedValueType("Expected Integer got %s instead.".formatted(value.getClass().getName()));
+        }
     }
 }

@@ -1,8 +1,11 @@
 package fqme.column.common.numeric;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
 
@@ -60,7 +63,7 @@ public class NumericColumn<T extends Number> extends Column<T> {
      * @return value converted to the java Numeric type.
      */
     @Override
-    public T fromSqlType(Object value) throws Exception {
+    public T fromSqlType(Object value) throws UnsupportedSqlType {
         if (type == Integer.class) {
             return (T) Integer.valueOf((int) value);
         } else if (type == Long.class) {
@@ -70,7 +73,7 @@ public class NumericColumn<T extends Number> extends Column<T> {
         } else if (type == Double.class) {
             return (T) Double.valueOf((double) value);
         }
-        throw new RuntimeException("Unsupported numeric type: " + type);
+        throw new UnsupportedSqlType("Unsupported numeric type: %s".formatted(type));
     }
 
     /**
@@ -79,9 +82,11 @@ public class NumericColumn<T extends Number> extends Column<T> {
      * @param statement statement to set column to.
      * @param index     index of the column in the statement.
      * @param value     expect subclass of Numeric.
+     * @throws UnsupportedValueType if value is not subclass of Numeric.
      */
     @Override
-    public void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception {
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
         if (this.type == Integer.class) {
             statement.setInt(index, (int) value);
         } else if (this.type == Long.class) {
@@ -91,7 +96,7 @@ public class NumericColumn<T extends Number> extends Column<T> {
         } else if (this.type == Double.class) {
             statement.setDouble(index, (double) value);
         } else {
-            throw new RuntimeException("Unsupported numeric type: " + this.type);
+            throw new UnsupportedValueType("Unsupported numeric type: %s".formatted(type));
         }
     }
 
