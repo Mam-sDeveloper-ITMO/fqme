@@ -1,5 +1,8 @@
 package fqme.utils;
 
+import java.time.LocalDateTime;
+
+import fqme.column.common.DateTimeColumn;
 import fqme.column.common.ForeignColumn;
 import fqme.column.common.StringColumn;
 import fqme.column.common.numeric.SerialColumn;
@@ -22,6 +25,11 @@ public class TestModel extends Model<TestModel> {
     @NonNull
     private String name;
     public static final StringColumn name_ = StringColumn.of("name");
+
+    @ColumnData
+    @NonNull
+    private LocalDateTime created;
+    public static final DateTimeColumn created_ = DateTimeColumn.of("created");
 
     @ColumnData
     @NonNull

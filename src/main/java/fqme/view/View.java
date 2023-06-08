@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedSqlType;
 import fqme.column.exceptions.UnsupportedValueType;
 import fqme.model.Model;
 import fqme.model.reflection.ModelFactory;
@@ -79,7 +80,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> get(Query query) throws SQLException, UnsupportedValueType {
+    public Set<T> get(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         PreparedStatement statement = statementBuilder.buildGetStatement(query);
         statement.execute();
 
@@ -100,7 +101,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> delete(Query query) throws SQLException, UnsupportedValueType {
+    public Set<T> delete(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         PreparedStatement statement = statementBuilder.buildDeleteStatement(query);
         statement.execute();
 
@@ -121,7 +122,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> put(Iterable<T> models) throws SQLException, UnsupportedValueType {
+    public Set<T> put(Iterable<T> models) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         Set<T> result = new HashSet<>();
         for (T model : models) {
             PreparedStatement statement = statementBuilder.buildPutStatement(model);
@@ -143,7 +144,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> put(T model) throws SQLException, UnsupportedValueType {
+    public Set<T> put(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         return put(List.of(model));
     }
 
@@ -156,10 +157,11 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public T buildModelFromResultSet(ResultSet resultSet) throws SQLException {
+    public T buildModelFromResultSet(ResultSet resultSet) throws SQLException, UnsupportedSqlType {
         List<Object> fields = new ArrayList<>();
         for (Column<?, ?> column : modelReflection.getColumns().values()) {
-            fields.add(resultSet.getObject(column.getName()));
+            Object sqlValue = resultSet.getObject(column.getName());
+            fields.add(column.fromSqlType(sqlValue));
         }
         ModelFactory<T> modelFactory = modelReflection.getModelFactory();
         return modelFactory.fromFields(fields);
