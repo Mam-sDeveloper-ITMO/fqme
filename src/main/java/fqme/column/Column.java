@@ -7,10 +7,8 @@ import fqme.column.exceptions.UnsupportedSqlType;
 import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * Column class represent single data column in the model.
@@ -194,87 +192,4 @@ public abstract class Column<T extends Column<T, K>, K> {
     public Query isNull() {
         return new Query(this.getName() + " IS NULL");
     }
-
-    // /**
-    // * PropertiesBuilder is used to set up properties of the column
-    // * in safe way.
-    // *
-    // * @param <K> type of the column.
-    // */
-    // @RequiredArgsConstructor
-    // protected static class PropertiesBuilder<K extends Column<?>> {
-    // /**
-    // * Instance of the column to set up.
-    // */
-    // private final K column;
-
-    // /**
-    // * Define if column can be null. Default is true.
-    // */
-    // private boolean nullable = true;
-
-    // /**
-    // * Define if column is unique. Default is false.
-    // */
-    // private boolean unique = false;
-
-    // /**
-    // * Define if column is primary key. Default is false.
-    // */
-    // private boolean primary = false;
-
-    // /**
-    // * Set nullable property of the column.
-    // *
-    // * @param nullable nullable property of the column.
-    // * @return this.
-    // * @throws IllegalArgumentException if try to set nullable to false for
-    // primary
-    // * key.
-    // */
-    // public PropertiesBuilder<K> nullable(Boolean nullable) {
-    // if (this.primary && nullable != false) {
-    // throw new IllegalArgumentException("Primary key cannot be nullable");
-    // }
-    // this.nullable = nullable;
-    // return this;
-    // }
-
-    // /**
-    // * Set unique property of the column.
-    // *
-    // * @param unique unique property of the column.
-    // * @return this.
-    // */
-    // public PropertiesBuilder<K> unique() {
-    // this.unique = true;
-    // return this;
-    // }
-
-    // /**
-    // * Set primary property of the column.
-    // * Will redefine nullable to false and unique to true.
-    // *
-    // * @param primary primary property of the column.
-    // * @return this.
-    // */
-    // public PropertiesBuilder<K> primary() {
-    // this.primary = true;
-    // this.unique = true; // will be ignored
-    // this.nullable = false;
-    // return this;
-    // }
-
-    // /**
-    // * Set up properties to the column.
-    // *
-    // * @return column with set up properties.
-    // */
-    // public K build() {
-    // column.setNullable(this.nullable);
-    // column.setUnique(this.unique);
-    // column.setPrimary(this.primary);
-    // return column;
-    // }
-    // }
 }

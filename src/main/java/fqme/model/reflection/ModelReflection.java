@@ -71,10 +71,12 @@ public class ModelReflection<T extends Model<T>> {
      * Table name is the model class name in lower case without "Model" suffix.
      * Example: "UserModel" -> "user"
      *
+     * Can be used by extending classes that depends on table name.
+     * 
      * @param modelClass a model class
      * @return a table name
      */
-    private static <K extends Model<K>> String buildTableName(Class<K> modelClass) {
+    public static <K extends Model<K>> String buildTableName(Class<K> modelClass) {
         String tableName = modelClass.getSimpleName().toLowerCase();
         tableName = tableName.replace("model", "");
         return tableName;
