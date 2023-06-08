@@ -9,7 +9,7 @@ import fqme.column.exceptions.UnsupportedValueType;
 /**
  * Column realization for serial values.
  */
-public class SerialColumn extends IntegerColumn {
+public class SerialColumn extends NumericColumn<SerialColumn, Integer> {
     /**
      * Define if the column can be null.
      *
