@@ -14,7 +14,7 @@ import fqme.query.QueryArgument;
  *
  * @see fqme.column.Column
  */
-public class NumericColumn<T extends Number> extends Column<T> {
+public class NumericColumn<T extends Number> extends Column<NumericColumn<T>, T> {
     /**
      * Type of the column.
      */

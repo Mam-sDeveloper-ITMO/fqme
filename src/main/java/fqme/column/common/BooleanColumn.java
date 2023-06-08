@@ -13,13 +13,13 @@ import fqme.query.Query;
  *
  * @see fqme.column.Column
  */
-public class BooleanColumn extends Column<Boolean> {
+public class BooleanColumn extends Column<BooleanColumn, Boolean> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected BooleanColumn(String name) {
+    public BooleanColumn(String name) {
         super(name);
     }
 

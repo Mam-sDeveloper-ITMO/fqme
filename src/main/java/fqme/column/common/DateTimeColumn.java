@@ -18,13 +18,13 @@ import fqme.query.QueryArgument;
  *
  * @see fqme.column.Column
  */
-public class DateTimeColumn extends Column<LocalDateTime> {
+public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected DateTimeColumn(String name) {
+    public DateTimeColumn(String name) {
         super(name);
     }
 

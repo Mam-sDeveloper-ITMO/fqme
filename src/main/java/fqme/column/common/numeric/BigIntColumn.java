@@ -9,7 +9,7 @@ public class BigIntColumn extends NumericColumn<Long> {
      *
      * @param name name of the column.
      */
-    private BigIntColumn(String name) {
+    public BigIntColumn(String name) {
         super(name, Long.class);
     }
 

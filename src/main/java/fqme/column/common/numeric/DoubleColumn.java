@@ -9,7 +9,7 @@ public class DoubleColumn extends NumericColumn<Double> {
      *
      * @param name name of the column.
      */
-    protected DoubleColumn(String name) {
+    public DoubleColumn(String name) {
         super(name, Double.class);
     }
 

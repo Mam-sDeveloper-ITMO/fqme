@@ -9,7 +9,7 @@ public class RealColumn extends NumericColumn<Float> {
      *
      * @param name name of the column.
      */
-    protected RealColumn(String name) {
+    public RealColumn(String name) {
         super(name, Float.class);
     }
 

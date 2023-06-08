@@ -2,8 +2,6 @@ package fqme.column;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
 
 import fqme.column.exceptions.UnsupportedSqlType;
 import fqme.column.exceptions.UnsupportedValueType;
@@ -48,7 +46,7 @@ import lombok.Setter;
  * @see fqme.model.reflection.ColumnData
  */
 @RequiredArgsConstructor
-public abstract class Column<T> {
+public abstract class Column<T extends Column<T, K>, K> {
     /**
      * Name of the column in the table.
      * Must be the same as the name of the field in the model.
@@ -57,79 +55,62 @@ public abstract class Column<T> {
     private final String name;
 
     /**
-     * List of modifiers for the column.
-     * Modifiers are used to generate sql query for table creation.
+     * Define if column can be null. Default is true.
      */
-    private final Set<String> modifiers = new HashSet<>();
+    @Getter
+    private boolean nullable = true;
 
     /**
-     * Return copy of modifiers set.
+     * Define if column is unique. Default is false.
+     */
+    @Getter
+    private boolean unique = false;
+
+    /**
+     * Define if column is primary key. Default is false.
+     */
+    @Getter
+    private boolean primary = false;
+
+    /**
+     * Define column nullable property.
      *
-     * @return copy of modifiers set.
+     * @param nullable nullable property.
+     * @return this.
+     * @throws IllegalArgumentException on trying to set nullable to true on primary
+     *                                  key.
      */
-    public Set<String> getModifiers() {
-        return new HashSet<>(this.modifiers);
-    }
-
-    /**
-     * Add modifier to the column.
-     *
-     * @param modifier modifier to add.
-     */
-    public void addModifier(String modifier) {
-        this.modifiers.add(modifier);
-    }
-
-    /**
-     * Remove modifier from the column.
-     */
-    public Boolean removeModifier(String modifier) {
-        return this.modifiers.remove(modifier);
-    }
-
-    /**
-     * Define if the column is primary key.
-     */
-    @Setter(AccessLevel.PROTECTED)
-    protected Boolean primary = null;
-
-    /**
-     * Primary key flag getter. Default value is {@code false}.
-     *
-     * @return primary flag.
-     */
-    public Boolean isPrimary() {
-        return this.primary == null ? false : this.primary;
-    }
-
-    /**
-     * Return column with changed primary flag.
-     * This value cannot be changed after the column is created.
-     *
-     * @param primary primary flag.
-     */
-    public static <K extends Column<?>> K asPrimary(K column) {
-        if (column.primary != null) {
-            throw new IllegalArgumentException("Primary key cannot be set twice");
+    public T nullable(boolean nullable) {
+        if (primary && nullable) {
+            throw new IllegalArgumentException("Primary key cannot be nullable");
         }
-        column.setPrimary(true);
-        column.addModifier("PRIMARY KEY");
-        return column;
+        this.nullable = nullable;
+        return (T) this;
     }
 
     /**
-     * Define if the column is nullable.
+     * Define column as unique.
+     *
+     * @param unique unique property.
+     * @return this.
      */
-    @Setter(AccessLevel.PROTECTED)
-    protected Boolean nullable = null;
+    public T unique() {
+        this.unique = true;
+        return (T) this;
+    }
 
     /**
-     * Nullable flag getter. Default value is {@code true}.
+     * Define column as primary key.
+     * Redefine nullable to false and unique to true.
      *
-     * @return nullable flag.
+     * @param primary primary property.
+     * @return this.
      */
-    public Boolean isNullable() {
-        return this.nullable == null ? true : this.nullable;
+    public T primary() {
+        this.primary = true;
+        this.nullable = false;
+        this.unique = true;
+        return (T) this;
     }
 
     /**
@@ -144,8 +125,16 @@ public abstract class Column<T> {
      */
     public final String getSqlDefinition() {
         String definition = this._getSqlDefinition();
-        for (String modifier : this.modifiers) {
-            definition += " " + modifier;
+        if (this.primary) {
+            definition += " PRIMARY KEY";
+        }
+        if (this.unique && !this.primary) {
+            definition += " UNIQUE";
+        }
+        if (this.nullable) {
+            definition += " NULL";
+        } else if (!this.nullable && !this.primary) {
+            definition += " NOT NULL";
         }
         return definition;
     }
@@ -157,7 +146,7 @@ public abstract class Column<T> {
      * @return value in java type.
      * @throws UnsupportedSqlType if value cannot be converted.
      */
-    public abstract T fromSqlType(Object value) throws UnsupportedSqlType;
+    public abstract K fromSqlType(Object value) throws UnsupportedSqlType;
 
     /**
      * Set column to statement
@@ -178,7 +167,7 @@ public abstract class Column<T> {
      * @param value value to compare with.
      * @return query for equal comparison.
      */
-    public Query eq(T value) {
+    public Query eq(K value) {
         return new Query(this.getName() + " = ?", QueryArgument.of(this, value));
     }
 
@@ -190,7 +179,7 @@ public abstract class Column<T> {
      * @param value value to compare with.
      * @return query for not equal comparison.
      */
-    public Query notEq(T value) {
+    public Query notEq(K value) {
         return new Query(this.getName() + " <> ?", QueryArgument.of(this, value));
     }
 
@@ -205,4 +194,87 @@ public abstract class Column<T> {
     public Query isNull() {
         return new Query(this.getName() + " IS NULL");
     }
+
+    // /**
+    // * PropertiesBuilder is used to set up properties of the column
+    // * in safe way.
+    // *
+    // * @param <K> type of the column.
+    // */
+    // @RequiredArgsConstructor
+    // protected static class PropertiesBuilder<K extends Column<?>> {
+    // /**
+    // * Instance of the column to set up.
+    // */
+    // private final K column;
+
+    // /**
+    // * Define if column can be null. Default is true.
+    // */
+    // private boolean nullable = true;
+
+    // /**
+    // * Define if column is unique. Default is false.
+    // */
+    // private boolean unique = false;
+
+    // /**
+    // * Define if column is primary key. Default is false.
+    // */
+    // private boolean primary = false;
+
+    // /**
+    // * Set nullable property of the column.
+    // *
+    // * @param nullable nullable property of the column.
+    // * @return this.
+    // * @throws IllegalArgumentException if try to set nullable to false for
+    // primary
+    // * key.
+    // */
+    // public PropertiesBuilder<K> nullable(Boolean nullable) {
+    // if (this.primary && nullable != false) {
+    // throw new IllegalArgumentException("Primary key cannot be nullable");
+    // }
+    // this.nullable = nullable;
+    // return this;
+    // }
+
+    // /**
+    // * Set unique property of the column.
+    // *
+    // * @param unique unique property of the column.
+    // * @return this.
+    // */
+    // public PropertiesBuilder<K> unique() {
+    // this.unique = true;
+    // return this;
+    // }
+
+    // /**
+    // * Set primary property of the column.
+    // * Will redefine nullable to false and unique to true.
+    // *
+    // * @param primary primary property of the column.
+    // * @return this.
+    // */
+    // public PropertiesBuilder<K> primary() {
+    // this.primary = true;
+    // this.unique = true; // will be ignored
+    // this.nullable = false;
+    // return this;
+    // }
+
+    // /**
+    // * Set up properties to the column.
+    // *
+    // * @return column with set up properties.
+    // */
+    // public K build() {
+    // column.setNullable(this.nullable);
+    // column.setUnique(this.unique);
+    // column.setPrimary(this.primary);
+    // return column;
+    // }
+    // }
 }

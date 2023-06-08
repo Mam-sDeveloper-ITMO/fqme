@@ -158,7 +158,7 @@ public class View<T extends Model<T>> {
      */
     public T buildModelFromResultSet(ResultSet resultSet) throws SQLException {
         List<Object> fields = new ArrayList<>();
-        for (Column<?> column : modelReflection.getColumns().values()) {
+        for (Column<?, ?> column : modelReflection.getColumns().values()) {
             fields.add(resultSet.getObject(column.getName()));
         }
         ModelFactory<T> modelFactory = modelReflection.getModelFactory();

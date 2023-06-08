@@ -33,7 +33,7 @@ public class ModelReflection<T extends Model<T>> {
      * @see Column
      */
     @Getter
-    private final LinkedHashMap<String, Column<?>> columns;
+    private final LinkedHashMap<String, Column<?, ?>> columns;
 
     /**
      * A functional interface that allows to get a list of fields values from a
@@ -59,7 +59,7 @@ public class ModelReflection<T extends Model<T>> {
      */
     public static <K extends Model<K>> ModelReflection<K> buildReflection(Class<K> modelClass) {
         String tableName = buildTableName(modelClass);
-        LinkedHashMap<String, Column<?>> columns = buildColumns(modelClass);
+        LinkedHashMap<String, Column<?, ?>> columns = buildColumns(modelClass);
         FieldsSupplier<K> fieldsSupplier = buildFieldsSupplier(modelClass);
         ModelFactory<K> modelFactory = buildModelFactory(modelClass);
         return new ModelReflection<>(tableName, columns, fieldsSupplier, modelFactory);
@@ -88,14 +88,14 @@ public class ModelReflection<T extends Model<T>> {
      * @param modelClass a model class
      * @return a list of columns names
      */
-    private static <K extends Model<K>> LinkedHashMap<String, Column<?>> buildColumns(Class<K> modelClass) {
+    private static <K extends Model<K>> LinkedHashMap<String, Column<?, ?>> buildColumns(Class<K> modelClass) {
         Field[] fields = modelClass.getDeclaredFields();
 
-        LinkedHashMap<String, Column<?>> columns = new LinkedHashMap<>();
+        LinkedHashMap<String, Column<?, ?>> columns = new LinkedHashMap<>();
         for (Field field : fields) {
             if (Column.class.isAssignableFrom(field.getType())) {
                 try {
-                    Column<?> column = (Column<?>) field.get(null);
+                    Column<?, ?> column = (Column<?, ?>) field.get(null);
                     columns.put(column.getName(), column);
                 } catch (IllegalAccessException e) {
                     throw new CannotAccessModelColumn(e);

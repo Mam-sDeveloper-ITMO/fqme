@@ -9,7 +9,7 @@ public class IntegerColumn extends NumericColumn<Integer> {
      *
      * @param name name of the column.
      */
-    protected IntegerColumn(String name) {
+    public IntegerColumn(String name) {
         super(name, Integer.class);
     }
 

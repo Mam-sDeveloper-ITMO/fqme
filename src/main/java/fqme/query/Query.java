@@ -26,7 +26,7 @@ public class Query {
      * List of arguments for query.
      */
     @NonNull
-    private List<QueryArgument<?>> whereArgs;
+    private List<QueryArgument<?, ?>> whereArgs;
 
     /**
      * Constructor.
@@ -36,7 +36,7 @@ public class Query {
      *
      * @see fqme.query.QueryArgument
      */
-    public Query(String whereClause, QueryArgument<?>... whereArgs) {
+    public Query(String whereClause, QueryArgument<?, ?>... whereArgs) {
         this.whereClause = whereClause;
         this.whereArgs = new ArrayList<>(Arrays.asList(whereArgs));
     }

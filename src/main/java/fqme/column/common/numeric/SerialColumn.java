@@ -16,16 +16,13 @@ public class SerialColumn extends IntegerColumn {
      * Nullable columns, skipped in the insert queries
      * if the value is null.
      */
-    public Boolean isNullable() {
-        return true;
-    }
 
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected SerialColumn(String name) {
+    public SerialColumn(String name) {
         super(name);
     }
 

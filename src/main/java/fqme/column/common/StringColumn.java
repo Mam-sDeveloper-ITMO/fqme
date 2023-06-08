@@ -14,13 +14,13 @@ import fqme.query.QueryArgument;
  *
  * @see fqme.column.Column
  */
-public class StringColumn extends Column<String> {
+public class StringColumn extends Column<StringColumn, String> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected StringColumn(String name) {
+    public StringColumn(String name) {
         super(name);
     }
 

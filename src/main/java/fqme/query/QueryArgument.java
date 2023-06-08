@@ -13,11 +13,11 @@ import lombok.Data;
  * in context of sql types.
  */
 @Data(staticConstructor = "of")
-public class QueryArgument<T> {
+public class QueryArgument<T extends Column<T, K>, K> {
     /**
      * Column to which the value belongs.
      */
-    private final Column<T> column;
+    private final Column<T, K> column;
 
     /**
      * Value of the argument.
