@@ -98,7 +98,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
      * @return query for before checking.
      */
     public Query before(LocalDateTime value) {
-        return new Query("<", QueryArgument.of(this, value));
+        return new Query("< ?", QueryArgument.of(this, value));
     }
 
     /**
@@ -110,7 +110,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
      * @return query for after checking.
      */
     public Query after(LocalDateTime value) {
-        return new Query(">", QueryArgument.of(this, value));
+        return new Query(this.getName() + " > ?", QueryArgument.of(this, value));
     }
 
     /**
@@ -123,6 +123,6 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
      * @return query for between checking.
      */
     public Query between(LocalDateTime startTime, LocalDateTime endTime) {
-        return new Query("BETWEEN", QueryArgument.of(this, startTime), QueryArgument.of(this, endTime));
+        return new Query(this.getName() + " BETWEEN ? AND ?", QueryArgument.of(this, startTime), QueryArgument.of(this, endTime));
     }
 }

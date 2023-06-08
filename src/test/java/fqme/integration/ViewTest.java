@@ -1,6 +1,7 @@
 package fqme.integration;
 
 import java.sql.Connection;
+import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.Set;
 
@@ -28,16 +29,17 @@ public class ViewTest {
         View<LocationModel> locationView = View.of(LocationModel.class, connection);
         View<TestModel> view = View.of(TestModel.class, connection);
 
+        Set<TestModel> result3 = view.get(TestModel.created_.after(LocalDateTime.now().minusDays(1)));
         for (int i = 0; i < 1000; i++) {
             LocationModel location = new LocationModel("New York", random.nextInt(20) - 20, random.nextInt(20) - 20);
             location = locationView.put(location).iterator().next();
 
-            TestModel model = new TestModel(10, "test", location.getId());
+            TestModel model = new TestModel(10, "test", LocalDateTime.now(), location.getId());
 
             LocationModel location2 = new LocationModel("Mexico", random.nextInt(20) - 20, random.nextInt(20) - 20);
             location2 = locationView.put(location2).iterator().next();
-            
-            TestModel model2 = new TestModel("Alex", location2.getId());
+
+            TestModel model2 = new TestModel("Alex", LocalDateTime.now(), location2.getId());
 
             Set<TestModel> result = view.put(model);
             result = view.put(model);
@@ -49,7 +51,7 @@ public class ViewTest {
 
             Set<TestModel> result2 = view.get(TestModel.name_.eq("Alex"));
             // assert result2.size() == 1;
-            Set<TestModel> result3 = view.get(TestModel.name_.eq("Alex").and(TestModel.id_.eq(10)));
+            result3 = view.get(TestModel.created_.after(LocalDateTime.now().minusDays(1)));
 
             Set<TestModel> result4 = view.get(LocationModel.id_.eq(model3.getLocationId()));
 
