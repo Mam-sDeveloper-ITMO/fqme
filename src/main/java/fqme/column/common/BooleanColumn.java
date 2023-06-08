@@ -1,8 +1,11 @@
 package fqme.column.common;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 
 /**
@@ -10,13 +13,13 @@ import fqme.query.Query;
  *
  * @see fqme.column.Column
  */
-public class BooleanColumn extends Column<Boolean> {
+public class BooleanColumn extends Column<BooleanColumn, Boolean> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected BooleanColumn(String name) {
+    public BooleanColumn(String name) {
         super(name);
     }
 
@@ -42,10 +45,15 @@ public class BooleanColumn extends Column<Boolean> {
      *
      * @param value expect Boolean
      * @return value converted to the java Boolean type.
+     * @throws UnsupportedSqlType if value is not Boolean.
      */
     @Override
-    public Boolean fromSqlType(Object value) {
-        return (Boolean) value;
+    public Boolean fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        throw new UnsupportedSqlType(
+                "Cannot convert value of type %s to Boolean".formatted(value.getClass().getName()));
     }
 
     /**
@@ -56,8 +64,13 @@ public class BooleanColumn extends Column<Boolean> {
      * @param value     expect Boolean value.
      */
     @Override
-    public void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception {
-        statement.setBoolean(index, (Boolean) value);
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
+        if (value instanceof Boolean) {
+            statement.setBoolean(index, (Boolean) value);
+        } else {
+            throw new UnsupportedValueType("Expected Boolean got %s instead.".formatted(value.getClass().getName()));
+        }
     }
 
     /**

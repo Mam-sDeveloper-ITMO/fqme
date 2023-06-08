@@ -1,16 +1,14 @@
 package fqme.column;
 
 import java.sql.PreparedStatement;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.sql.SQLException;
 
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * Column class represent single data column in the model.
@@ -46,7 +44,7 @@ import lombok.Setter;
  * @see fqme.model.reflection.ColumnData
  */
 @RequiredArgsConstructor
-public abstract class Column<T> {
+public abstract class Column<T extends Column<T, K>, K> {
     /**
      * Name of the column in the table.
      * Must be the same as the name of the field in the model.
@@ -55,79 +53,62 @@ public abstract class Column<T> {
     private final String name;
 
     /**
-     * List of modifiers for the column.
-     * Modifiers are used to generate sql query for table creation.
+     * Define if column can be null. Default is true.
      */
-    private final Set<String> modifiers = new HashSet<>();
+    @Getter
+    private boolean nullable = true;
 
     /**
-     * Return copy of modifiers list.
+     * Define if column is unique. Default is false.
+     */
+    @Getter
+    private boolean unique = false;
+
+    /**
+     * Define if column is primary key. Default is false.
+     */
+    @Getter
+    private boolean primary = false;
+
+    /**
+     * Define column nullable property.
      *
-     * @return copy of modifiers list.
+     * @param nullable nullable property.
+     * @return this.
+     * @throws IllegalArgumentException on trying to set nullable to true on primary
+     *                                  key.
      */
-    public List<String> getModifiers() {
-        return List.copyOf(this.modifiers);
-    }
-
-    /**
-     * Add modifier to the column.
-     *
-     * @param modifier modifier to add.
-     */
-    public void addModifier(String modifier) {
-        this.modifiers.add(modifier);
-    }
-
-    /**
-     * Remove modifier from the column.
-     */
-    public Boolean removeModifier(String modifier) {
-        return this.modifiers.remove(modifier);
-    }
-
-    /**
-     * Define if the column is primary key.
-     */
-    @Setter(AccessLevel.PROTECTED)
-    protected Boolean primary = null;
-
-    /**
-     * Primary key flag getter. Default value is {@code false}.
-     *
-     * @return primary flag.
-     */
-    public Boolean isPrimary() {
-        return this.primary == null ? false : this.primary;
-    }
-
-    /**
-     * Return column with changed primary flag.
-     * This value cannot be changed after the column is created.
-     *
-     * @param primary primary flag.
-     */
-    public static <K extends Column<?>> K asPrimary(K column) {
-        if (column.primary != null) {
-            throw new IllegalArgumentException("Primary key cannot be set twice");
+    public T nullable(boolean nullable) {
+        if (primary && nullable) {
+            throw new IllegalArgumentException("Primary key cannot be nullable");
         }
-        column.setPrimary(true);
-        column.addModifier("PRIMARY KEY");
-        return column;
+        this.nullable = nullable;
+        return (T) this;
     }
 
     /**
-     * Define if the column is nullable.
+     * Define column as unique.
+     *
+     * @param unique unique property.
+     * @return this.
      */
-    @Setter(AccessLevel.PROTECTED)
-    protected Boolean nullable = null;
+    public T unique() {
+        this.unique = true;
+        return (T) this;
+    }
 
     /**
-     * Nullable flag getter. Default value is {@code true}.
+     * Define column as primary key.
+     * Redefine nullable to false and unique to true.
      *
-     * @return nullable flag.
+     * @param primary primary property.
+     * @return this.
      */
-    public Boolean isNullable() {
-        return this.nullable == null ? true : this.nullable;
+    public T primary() {
+        this.primary = true;
+        this.nullable = false;
+        this.unique = true;
+        return (T) this;
     }
 
     /**
@@ -142,8 +123,16 @@ public abstract class Column<T> {
      */
     public final String getSqlDefinition() {
         String definition = this._getSqlDefinition();
-        for (String modifier : this.modifiers) {
-            definition += " " + modifier;
+        if (this.primary) {
+            definition += " PRIMARY KEY";
+        }
+        if (this.unique && !this.primary) {
+            definition += " UNIQUE";
+        }
+        if (this.nullable) {
+            definition += " NULL";
+        } else if (!this.nullable && !this.primary) {
+            definition += " NOT NULL";
         }
         return definition;
     }
@@ -153,8 +142,9 @@ public abstract class Column<T> {
      *
      * @param value value from the database.
      * @return value in java type.
+     * @throws UnsupportedSqlType if value cannot be converted.
      */
-    public abstract T fromSqlType(Object value) throws Exception;
+    public abstract K fromSqlType(Object value) throws UnsupportedSqlType;
 
     /**
      * Set column to statement
@@ -162,8 +152,10 @@ public abstract class Column<T> {
      * @param statement statement to set column to.
      * @param index     index of the column in the statement.
      * @param value     value to set.
+     * @throws UnsupportedValueType if value cannot be converted.
      */
-    public abstract void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception;
+    public abstract void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException;
 
     /**
      * Return query for equal comparison.
@@ -173,7 +165,7 @@ public abstract class Column<T> {
      * @param value value to compare with.
      * @return query for equal comparison.
      */
-    public Query eq(T value) {
+    public Query eq(K value) {
         return new Query(this.getName() + " = ?", QueryArgument.of(this, value));
     }
 
@@ -185,7 +177,7 @@ public abstract class Column<T> {
      * @param value value to compare with.
      * @return query for not equal comparison.
      */
-    public Query notEq(T value) {
+    public Query notEq(K value) {
         return new Query(this.getName() + " <> ?", QueryArgument.of(this, value));
     }
 

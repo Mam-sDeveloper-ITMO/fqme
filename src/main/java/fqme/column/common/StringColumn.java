@@ -1,8 +1,11 @@
 package fqme.column.common;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
 
@@ -11,13 +14,13 @@ import fqme.query.QueryArgument;
  *
  * @see fqme.column.Column
  */
-public class StringColumn extends Column<String> {
+public class StringColumn extends Column<StringColumn, String> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected StringColumn(String name) {
+    public StringColumn(String name) {
         super(name);
     }
 
@@ -45,8 +48,11 @@ public class StringColumn extends Column<String> {
      * @return value converted to the java String type.
      */
     @Override
-    public String fromSqlType(Object value) {
-        return (String) value;
+    public String fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value instanceof String) {
+            return (String) value;
+        }
+        throw new UnsupportedSqlType("Expected String got %s instead.".formatted(value.getClass().getName()));
     }
 
     /**
@@ -55,10 +61,16 @@ public class StringColumn extends Column<String> {
      * @param statement statement to set column to.
      * @param index     index of the column in the statement.
      * @param value     expect String value.
+     * @throws UnsupportedValueType if value is not String.
      */
     @Override
-    public void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception {
-        statement.setString(index, (String) value);
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
+        if (value instanceof String) {
+            statement.setString(index, (String) value);
+        } else {
+            throw new UnsupportedValueType("Expected String got %s instead.".formatted(value.getClass().getName()));
+        }
     }
 
     /**

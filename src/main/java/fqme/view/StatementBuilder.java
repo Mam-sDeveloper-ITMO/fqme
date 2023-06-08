@@ -2,6 +2,7 @@ package fqme.view;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.model.Model;
 import fqme.model.reflection.ModelReflection;
 import fqme.query.Query;
@@ -33,12 +35,12 @@ public class StatementBuilder<T extends Model<T>> {
      * @return
      * @throws Exception
      */
-    public PreparedStatement buildCreateTableStatement() throws Exception {
+    public PreparedStatement buildCreateTableStatement() throws SQLException {
         String tableName = modelReflection.getTableName();
         List<String> columnsDefinitions = new ArrayList<>();
-        for (Entry<String, Column<?>> entry : modelReflection.getColumns().entrySet()) {
+        for (Entry<String, Column<?, ?>> entry : modelReflection.getColumns().entrySet()) {
             String columnName = entry.getKey();
-            Column<?> column = entry.getValue();
+            Column<?, ?> column = entry.getValue();
 
             String columnDefinition = "%s %s".formatted(columnName, column.getSqlDefinition());
             columnsDefinitions.add(columnDefinition);
@@ -64,14 +66,14 @@ public class StatementBuilder<T extends Model<T>> {
      * @return a statement
      * @throws Exception
      */
-    public PreparedStatement buildGetStatement(Query query) throws Exception {
+    public PreparedStatement buildGetStatement(Query query) throws SQLException, UnsupportedValueType {
         String sql = "SELECT * FROM %s WHERE %s"
                 .formatted(modelReflection.getTableName(), query.getWhereClause());
 
         PreparedStatement statement = connection.prepareStatement(sql);
-        List<QueryArgument<?>> whereArgs = query.getWhereArgs();
+        List<QueryArgument<?, ?>> whereArgs = query.getWhereArgs();
         for (Integer index = 0; index < whereArgs.size(); index++) {
-            QueryArgument<?> argument = whereArgs.get(index);
+            QueryArgument<?, ?> argument = whereArgs.get(index);
             argument.getColumn().setToStatement(statement, index + 1, argument.getValue());
         }
         return statement;
@@ -84,14 +86,14 @@ public class StatementBuilder<T extends Model<T>> {
      * @return a statement
      * @throws Exception
      */
-    public PreparedStatement buildDeleteStatement(Query query) throws Exception {
+    public PreparedStatement buildDeleteStatement(Query query) throws SQLException, UnsupportedValueType {
         String sql = "DELETE FROM %s WHERE %s RETURNING *"
                 .formatted(modelReflection.getTableName(), query.getWhereClause());
 
         PreparedStatement statement = connection.prepareStatement(sql);
-        List<QueryArgument<?>> whereArgs = query.getWhereArgs();
+        List<QueryArgument<?, ?>> whereArgs = query.getWhereArgs();
         for (Integer index = 0; index < whereArgs.size(); index++) {
-            QueryArgument<?> argument = whereArgs.get(index);
+            QueryArgument<?, ?> argument = whereArgs.get(index);
             argument.getColumn().setToStatement(statement, index + 1, argument.getValue());
         }
         return statement;
@@ -104,25 +106,26 @@ public class StatementBuilder<T extends Model<T>> {
      * @param model a model
      * @return a prepared statement
      */
-    public PreparedStatement buildPutStatement(T model) throws Exception {
+    public PreparedStatement buildPutStatement(T model) throws SQLException, UnsupportedValueType {
         LinkedHashMap<String, Object> fieldsValues = modelReflection.getFieldsSupplier().getFieldsValues(model);
 
-        LinkedHashMap<String, Column<?>> settableColumns = new LinkedHashMap<>();
-        LinkedHashMap<String, Column<?>> primaryColumns = new LinkedHashMap<>();
-        for (Entry<String, Column<?>> entry : modelReflection.getColumns().entrySet()) {
+        LinkedHashMap<String, Column<?, ?>> settableColumns = new LinkedHashMap<>();
+        LinkedHashMap<String, Column<?, ?>> primaryColumns = new LinkedHashMap<>();
+        for (Entry<String, Column<?, ?>> entry : modelReflection.getColumns().entrySet()) {
             String columnName = entry.getKey();
-            Column<?> column = entry.getValue();
+            Column<?, ?> column = entry.getValue();
             Object fieldValue = fieldsValues.get(columnName);
 
-            if (fieldValue == null && column.isNullable()) {
+            if (column.isPrimary()) {
+                primaryColumns.put(columnName, column);
+            }
+
+            if (fieldValue == null && column.isPrimary()) {
                 continue;
             } else if (fieldValue == null && !column.isNullable()) {
                 throw new IllegalArgumentException("Column " + columnName + " is not nullable");
             } else {
                 settableColumns.put(columnName, column);
-            }
-            if (column.isPrimary()) {
-                primaryColumns.put(columnName, column);
             }
         }
         String fieldsNames = String.join(", ", settableColumns.keySet());
@@ -142,7 +145,7 @@ public class StatementBuilder<T extends Model<T>> {
 
         PreparedStatement statement = connection.prepareStatement(sql);
         Integer index = 1;
-        for (Column<?> column : settableColumns.values()) {
+        for (Column<?, ?> column : settableColumns.values()) {
             Object fieldValue = fieldsValues.get(column.getName());
             column.setToStatement(statement, index++, fieldValue);
         }

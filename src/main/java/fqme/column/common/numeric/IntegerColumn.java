@@ -1,16 +1,22 @@
 package fqme.column.common.numeric;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
+
 /**
  * A column that stores integer numbers.
  */
-public class IntegerColumn extends NumericColumn<Integer> {
+public class IntegerColumn extends NumericColumn<IntegerColumn, Integer> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected IntegerColumn(String name) {
-        super(name, Integer.class);
+    public IntegerColumn(String name) {
+        super(name);
     }
 
     /**
@@ -18,5 +24,48 @@ public class IntegerColumn extends NumericColumn<Integer> {
      */
     public static IntegerColumn of(String name) {
         return new IntegerColumn(name);
+    }
+
+    /**
+     * Returns the SQL definition of the column.
+     *
+     * @return "INTEGER"
+     */
+    @Override
+    protected String _getSqlDefinition() {
+        return "INTEGER";
+    }
+
+    /**
+     * Converts a value from SQL type to Java type.
+     *
+     * @param value must be an instance of Integer.
+     * @return the converted value.
+     * @throws UnsupportedSqlType if the value is not instance of Integer.
+     */
+    @Override
+    public Integer fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        throw new UnsupportedSqlType("Expected Integer got %s instead.".formatted(value.getClass().getName()));
+    }
+
+    /**
+     * Sets the value to the statement at the given index.
+     *
+     * @param statement the statement to set the value to.
+     * @param index     the index of the value to set.
+     * @param value     must be an instance of Integer.
+     * @throws UnsupportedValueType if the value is not instance of Integer.
+     */
+    @Override
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
+        if (value instanceof Integer) {
+            statement.setInt(index, (Integer) value);
+        } else {
+            throw new UnsupportedValueType("Expected Integer got %s instead.".formatted(value.getClass().getName()));
+        }
     }
 }

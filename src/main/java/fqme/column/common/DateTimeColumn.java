@@ -2,10 +2,14 @@ package fqme.column.common;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import fqme.column.Column;
+import fqme.column.exceptions.UnsupportedSqlType;
+import fqme.column.exceptions.UnsupportedValueType;
 import fqme.query.Query;
 import fqme.query.QueryArgument;
 
@@ -14,13 +18,13 @@ import fqme.query.QueryArgument;
  *
  * @see fqme.column.Column
  */
-public class DateTimeColumn extends Column<LocalDateTime> {
+public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
     /**
      * Default constructor.
      *
      * @param name name of the column.
      */
-    protected DateTimeColumn(String name) {
+    public DateTimeColumn(String name) {
         super(name);
     }
 
@@ -46,17 +50,19 @@ public class DateTimeColumn extends Column<LocalDateTime> {
      *
      * @param value expect Timestamp, Date or Time value.
      * @return value converted to the java LocalDateTime type.
+     * @throws UnsupportedSqlType if value is not Timestamp, Date or Time.
      */
     @Override
-    public LocalDateTime fromSqlType(Object value) throws Exception {
+    public LocalDateTime fromSqlType(Object value) throws UnsupportedSqlType {
         if (value instanceof Timestamp) {
             return ((Timestamp) value).toLocalDateTime();
         } else if (value instanceof Date) {
             return ((Date) value).toLocalDate().atStartOfDay();
         } else if (value instanceof java.sql.Time) {
-            return ((java.sql.Time) value).toLocalTime().atDate(LocalDateTime.now().toLocalDate());
+            return ((Time) value).toLocalTime().atDate(LocalDateTime.now().toLocalDate());
         }
-        throw new RuntimeException("Can't convert " + value.getClass().getName() + " to LocalDateTime");
+        throw new UnsupportedSqlType(
+                "Expected Timestamp, Date or Time got %s instead.".formatted(value.getClass().getName()));
     }
 
     /**
@@ -67,8 +73,20 @@ public class DateTimeColumn extends Column<LocalDateTime> {
      * @param value     expect LocalDateTime value.
      */
     @Override
-    public void setToStatement(PreparedStatement statement, Integer index, Object value) throws Exception {
-        statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+    public void setToStatement(PreparedStatement statement, Integer index, Object value)
+            throws UnsupportedValueType, SQLException {
+        if (value instanceof LocalDateTime) {
+            statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+        } else if (value instanceof Timestamp) {
+            statement.setTimestamp(index, (Timestamp) value);
+        } else if (value instanceof Date) {
+            statement.setDate(index, (Date) value);
+        } else if (value instanceof Time) {
+            statement.setTime(index, (Time) value);
+        } else {
+            throw new UnsupportedValueType(
+                    "Expected LocalDateTime got %s instead.".formatted(value.getClass().getName()));
+        }
     }
 
     /**
