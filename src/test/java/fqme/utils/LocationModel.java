@@ -1,7 +1,7 @@
 package fqme.utils;
 
-import fqme.column.common.ForeignColumn;
 import fqme.column.common.StringColumn;
+import fqme.column.common.numeric.IntegerColumn;
 import fqme.column.common.numeric.SerialColumn;
 import fqme.model.Model;
 import fqme.model.reflection.ColumnData;
@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class TestModel extends Model<TestModel> {
+public class LocationModel extends Model<LocationModel> {
     @ColumnData
     private Integer id;
     public static final SerialColumn id_ = SerialColumn.of("id").primary();
@@ -25,7 +25,11 @@ public class TestModel extends Model<TestModel> {
 
     @ColumnData
     @NonNull
-    private Integer locationId;
-    public static final ForeignColumn locationId_ = ForeignColumn.of("locationId", LocationModel.class,
-            LocationModel.id_);
+    private Integer x;
+    public static final IntegerColumn x_ = IntegerColumn.of("x");
+
+    @ColumnData
+    @NonNull
+    private Integer y;
+    public static final IntegerColumn y_ = IntegerColumn.of("y");
 }
