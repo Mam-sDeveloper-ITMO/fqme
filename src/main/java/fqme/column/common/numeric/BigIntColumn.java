@@ -1,3 +1,4 @@
+// package fqme.column.common.numeric;
 package fqme.column.common.numeric;
 
 import java.sql.PreparedStatement;
@@ -45,10 +46,16 @@ public class BigIntColumn extends NumericColumn<BigIntColumn, Long> {
      */
     @Override
     public Long fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedSqlType("Value cannot be null.");
+            }
+            return null;
+        } else
         if (value instanceof Long) {
             return (Long) value;
         }
-        throw new UnsupportedSqlType("Expected Long got %s instead.".formatted(value.getClass().getName()));
+        throw new UnsupportedSqlType(String.format("Expected Long got %s instead.", value.getClass().getName()));
     }
 
     /**
@@ -62,10 +69,16 @@ public class BigIntColumn extends NumericColumn<BigIntColumn, Long> {
     @Override
     public void setToStatement(PreparedStatement statement, Integer index, Object value)
             throws UnsupportedValueType, SQLException {
-        if (value instanceof Long) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedValueType("Value cannot be null.");
+            }
+            statement.setNull(index, java.sql.Types.BIGINT);
+        }
+        else if (value instanceof Long) {
             statement.setLong(index, (Long) value);
         } else {
-            throw new UnsupportedValueType("Expected Long got %s instead.".formatted(value.getClass().getName()));
+            throw new UnsupportedValueType(String.format("Expected Long got %s instead.", value.getClass().getName()));
         }
     }
 }

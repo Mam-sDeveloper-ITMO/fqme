@@ -45,10 +45,16 @@ public class DoubleColumn extends NumericColumn<DoubleColumn, Double> {
      */
     @Override
     public Double fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedSqlType("Value cannot be null.");
+            }
+            return null;
+        } else
         if (value instanceof Double) {
             return (Double) value;
         }
-        throw new UnsupportedSqlType("Expected Double got %s instead.".formatted(value.getClass().getName()));
+        throw new UnsupportedSqlType(String.format("Expected Double got %s instead.", value.getClass().getName()));
     }
 
     /**
@@ -62,10 +68,17 @@ public class DoubleColumn extends NumericColumn<DoubleColumn, Double> {
     @Override
     public void setToStatement(PreparedStatement statement, Integer index, Object value)
             throws UnsupportedValueType, SQLException {
-        if (value instanceof Double) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedValueType("Value cannot be null.");
+            }
+            statement.setNull(index, java.sql.Types.DOUBLE);
+
+        } else if (value instanceof Double) {
             statement.setDouble(index, (Double) value);
         } else {
-            throw new UnsupportedValueType("Expected Double got %s instead.".formatted(value.getClass().getName()));
+            throw new UnsupportedValueType(
+                    String.format("Expected Double got %s instead.", value.getClass().getName()));
         }
     }
 }

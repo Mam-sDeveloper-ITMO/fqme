@@ -49,11 +49,17 @@ public class BooleanColumn extends Column<BooleanColumn, Boolean> {
      */
     @Override
     public Boolean fromSqlType(Object value) throws UnsupportedSqlType {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedSqlType("Value cannot be null.");
+            }
+            return null;
+        } else
         if (value instanceof Boolean) {
             return (Boolean) value;
         }
         throw new UnsupportedSqlType(
-                "Cannot convert value of type %s to Boolean".formatted(value.getClass().getName()));
+                String.format("Cannot convert value of type %s to Boolean", value.getClass().getName()));
     }
 
     /**
@@ -66,10 +72,17 @@ public class BooleanColumn extends Column<BooleanColumn, Boolean> {
     @Override
     public void setToStatement(PreparedStatement statement, Integer index, Object value)
             throws UnsupportedValueType, SQLException {
-        if (value instanceof Boolean) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedValueType("Value cannot be null");
+            }
+            statement.setNull(index, java.sql.Types.BOOLEAN);
+
+        } else if (value instanceof Boolean) {
             statement.setBoolean(index, (Boolean) value);
         } else {
-            throw new UnsupportedValueType("Expected Boolean got %s instead.".formatted(value.getClass().getName()));
+            throw new UnsupportedValueType(
+                    String.format("Expected Boolean got %s instead.", value.getClass().getName()));
         }
     }
 
