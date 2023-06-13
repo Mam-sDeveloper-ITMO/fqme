@@ -54,7 +54,12 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
      */
     @Override
     public LocalDateTime fromSqlType(Object value) throws UnsupportedSqlType {
-        if (value instanceof Timestamp) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedSqlType("Value cannot be null.");
+            }
+            return null;
+        } else if (value instanceof Timestamp) {
             return ((Timestamp) value).toLocalDateTime();
         } else if (value instanceof Date) {
             return ((Date) value).toLocalDate().atStartOfDay();
@@ -62,7 +67,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
             return ((Time) value).toLocalTime().atDate(LocalDateTime.now().toLocalDate());
         }
         throw new UnsupportedSqlType(
-                "Expected Timestamp, Date or Time got %s instead.".formatted(value.getClass().getName()));
+                String.format("Expected Timestamp, Date or Time got %s instead.", value.getClass().getName()));
     }
 
     /**
@@ -75,7 +80,13 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
     @Override
     public void setToStatement(PreparedStatement statement, Integer index, Object value)
             throws UnsupportedValueType, SQLException {
-        if (value instanceof LocalDateTime) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedValueType("Value cannot be null.");
+            }
+            statement.setNull(index, java.sql.Types.TIMESTAMP);
+
+        } else if (value instanceof LocalDateTime) {
             statement.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
         } else if (value instanceof Timestamp) {
             statement.setTimestamp(index, (Timestamp) value);
@@ -85,7 +96,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
             statement.setTime(index, (Time) value);
         } else {
             throw new UnsupportedValueType(
-                    "Expected LocalDateTime got %s instead.".formatted(value.getClass().getName()));
+                    String.format("Expected LocalDateTime got %s instead.", value.getClass().getName()));
         }
     }
 
@@ -123,6 +134,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
      * @return query for between checking.
      */
     public Query between(LocalDateTime startTime, LocalDateTime endTime) {
-        return new Query(this.getName() + " BETWEEN ? AND ?", QueryArgument.of(this, startTime), QueryArgument.of(this, endTime));
+        return new Query(this.getName() + " BETWEEN ? AND ?", QueryArgument.of(this, startTime),
+                QueryArgument.of(this, endTime));
     }
 }

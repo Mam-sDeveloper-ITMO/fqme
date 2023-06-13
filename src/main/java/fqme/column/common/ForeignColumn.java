@@ -2,7 +2,6 @@ package fqme.column.common;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
 
 import fqme.column.Column;
 import fqme.column.exceptions.UnsupportedSqlType;
@@ -54,7 +53,7 @@ public class ForeignColumn extends Column<ForeignColumn, Integer> {
      */
     @Override
     protected String _getSqlDefinition() {
-        return "INTEGER REFERENCES %s (%s)".formatted(tableName, columnName);
+        return String.format("INTEGER REFERENCES %s (%s)", tableName, columnName);
     }
 
     /**
@@ -64,10 +63,15 @@ public class ForeignColumn extends Column<ForeignColumn, Integer> {
      */
     @Override
     public Integer fromSqlType(Object value) throws UnsupportedSqlType {
-        if (value instanceof Integer) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedSqlType("Value cannot be null.");
+            }
+            return null;
+        } else if (value instanceof Integer) {
             return (Integer) value;
         }
-        throw new UnsupportedSqlType("Cannot convert value '%s' to Integer".formatted(value));
+        throw new UnsupportedSqlType(String.format("Cannot convert value '%s' to Integer", value));
     }
 
     /**
@@ -81,10 +85,15 @@ public class ForeignColumn extends Column<ForeignColumn, Integer> {
     @Override
     public void setToStatement(PreparedStatement statement, Integer index, Object value)
             throws UnsupportedValueType, SQLException {
-        if (value instanceof Integer) {
+        if (value == null) {
+            if (!isNullable()) {
+                throw new UnsupportedValueType("Value cannot be null");
+            }
+            statement.setNull(index, java.sql.Types.INTEGER);
+        } else if (value instanceof Integer) {
             statement.setInt(index, (Integer) value);
         } else {
-            throw new UnsupportedValueType("Cannot convert value '%s' to Integer".formatted(value));
+            throw new UnsupportedValueType(String.format("Cannot convert value '%s' to Integer", value));
         }
     }
 }
