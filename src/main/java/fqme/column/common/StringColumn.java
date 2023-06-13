@@ -52,7 +52,7 @@ public class StringColumn extends Column<StringColumn, String> {
         if (value == null) {
             if (!isNullable()) {
                 throw new UnsupportedSqlType("Value cannot be null.");
-            } 
+            }
             return null;
         } else if (value instanceof String) {
             return (String) value;
@@ -74,7 +74,7 @@ public class StringColumn extends Column<StringColumn, String> {
         if (value == null) {
             if (!isNullable()) {
                 throw new UnsupportedValueType("Value cannot be null.");
-            } 
+            }
             statement.setString(index, null);
         } else if (value instanceof String) {
             statement.setString(index, (String) value);

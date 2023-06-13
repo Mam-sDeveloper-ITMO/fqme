@@ -54,8 +54,7 @@ public class BooleanColumn extends Column<BooleanColumn, Boolean> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Boolean) {
+        } else if (value instanceof Boolean) {
             return (Boolean) value;
         }
         throw new UnsupportedSqlType(

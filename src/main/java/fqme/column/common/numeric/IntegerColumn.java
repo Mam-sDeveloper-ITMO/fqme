@@ -50,8 +50,7 @@ public class IntegerColumn extends NumericColumn<IntegerColumn, Integer> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Integer) {
+        } else if (value instanceof Integer) {
             return (Integer) value;
         }
         throw new UnsupportedSqlType(String.format("Expected Integer got %s instead.", value.getClass().getName()));
@@ -73,11 +72,11 @@ public class IntegerColumn extends NumericColumn<IntegerColumn, Integer> {
                 throw new UnsupportedValueType("Value cannot be null");
             }
             statement.setNull(index, java.sql.Types.INTEGER);
-        } else
-        if (value instanceof Integer) {
+        } else if (value instanceof Integer) {
             statement.setInt(index, (Integer) value);
         } else {
-            throw new UnsupportedValueType(String.format("Expected Integer got %s instead.", value.getClass().getName()));
+            throw new UnsupportedValueType(
+                    String.format("Expected Integer got %s instead.", value.getClass().getName()));
         }
     }
 }

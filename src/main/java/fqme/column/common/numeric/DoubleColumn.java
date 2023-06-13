@@ -50,8 +50,7 @@ public class DoubleColumn extends NumericColumn<DoubleColumn, Double> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Double) {
+        } else if (value instanceof Double) {
             return (Double) value;
         }
         throw new UnsupportedSqlType(String.format("Expected Double got %s instead.", value.getClass().getName()));

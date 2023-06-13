@@ -50,8 +50,7 @@ public class RealColumn extends NumericColumn<RealColumn, Float> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Float) {
+        } else if (value instanceof Float) {
             return (Float) value;
         }
         throw new UnsupportedSqlType(String.format("Expected Float got %s instead.", value.getClass().getName()));
@@ -73,8 +72,7 @@ public class RealColumn extends NumericColumn<RealColumn, Float> {
                 throw new UnsupportedValueType("Value cannot be null.");
             }
             statement.setNull(index, java.sql.Types.REAL);
-        } else
-        if (value instanceof Float) {
+        } else if (value instanceof Float) {
             statement.setFloat(index, (Float) value);
         } else {
             throw new UnsupportedValueType(String.format("Expected Float got %s instead.", value.getClass().getName()));

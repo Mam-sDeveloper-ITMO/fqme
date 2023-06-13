@@ -68,8 +68,7 @@ public class ForeignColumn extends Column<ForeignColumn, Integer> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Integer) {
+        } else if (value instanceof Integer) {
             return (Integer) value;
         }
         throw new UnsupportedSqlType(String.format("Cannot convert value '%s' to Integer", value));

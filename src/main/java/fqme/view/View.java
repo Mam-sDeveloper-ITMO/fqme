@@ -93,18 +93,6 @@ public class View<T extends Model<T>> {
         return models;
     }
 
-    public Set<T> get() throws SQLException, UnsupportedValueType, UnsupportedSqlType {
-        PreparedStatement statement = statementBuilder.buildGetStatement();
-        statement.execute();
-
-        ResultSet resultSet = statement.getResultSet();
-        Set<T> models = new HashSet<>();
-        while (resultSet.next()) {
-            models.add(buildModelFromResultSet(resultSet));
-        }
-        return models;
-    }
-
     /**
      * Delete models by a query.
      *
@@ -116,18 +104,6 @@ public class View<T extends Model<T>> {
      */
     public Set<T> delete(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         PreparedStatement statement = statementBuilder.buildDeleteStatement(query);
-        statement.execute();
-
-        ResultSet resultSet = statement.getResultSet();
-        Set<T> models = new HashSet<>();
-        while (resultSet.next()) {
-            models.add(buildModelFromResultSet(resultSet));
-        }
-        return models;
-    }
-
-    public Set<T> delete() throws SQLException, UnsupportedValueType, UnsupportedSqlType {
-        PreparedStatement statement = statementBuilder.buildDeleteStatement();
         statement.execute();
 
         ResultSet resultSet = statement.getResultSet();
@@ -170,7 +146,7 @@ public class View<T extends Model<T>> {
      *                              value type
      */
     public Set<T> put(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
-        return put(Arrays.asList(model));
+        return put(List.of(model));
     }
 
     /**

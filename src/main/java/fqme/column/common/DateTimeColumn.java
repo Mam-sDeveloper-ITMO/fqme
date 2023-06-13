@@ -59,8 +59,7 @@ public class DateTimeColumn extends Column<DateTimeColumn, LocalDateTime> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Timestamp) {
+        } else if (value instanceof Timestamp) {
             return ((Timestamp) value).toLocalDateTime();
         } else if (value instanceof Date) {
             return ((Date) value).toLocalDate().atStartOfDay();

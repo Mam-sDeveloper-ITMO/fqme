@@ -51,8 +51,7 @@ public class BigIntColumn extends NumericColumn<BigIntColumn, Long> {
                 throw new UnsupportedSqlType("Value cannot be null.");
             }
             return null;
-        } else
-        if (value instanceof Long) {
+        } else if (value instanceof Long) {
             return (Long) value;
         }
         throw new UnsupportedSqlType(String.format("Expected Long got %s instead.", value.getClass().getName()));
@@ -74,8 +73,7 @@ public class BigIntColumn extends NumericColumn<BigIntColumn, Long> {
                 throw new UnsupportedValueType("Value cannot be null.");
             }
             statement.setNull(index, java.sql.Types.BIGINT);
-        }
-        else if (value instanceof Long) {
+        } else if (value instanceof Long) {
             statement.setLong(index, (Long) value);
         } else {
             throw new UnsupportedValueType(String.format("Expected Long got %s instead.", value.getClass().getName()));
