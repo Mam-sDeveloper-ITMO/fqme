@@ -7,7 +7,7 @@
 
     <groupId>com.ohtie</groupId>
     <artifactId>fqme</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
 
     <name>FQME</name>
     <description>FQME - Fields, Queries, Models (either known as Entities)</description>
