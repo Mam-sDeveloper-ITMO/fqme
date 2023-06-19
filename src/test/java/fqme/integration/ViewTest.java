@@ -2,6 +2,7 @@ package fqme.integration;
 
 import java.sql.Connection;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -57,7 +58,11 @@ public class ViewTest {
 
             view.delete(model2);
 
+            view.deleteMany(TestModel.created_.after(LocalDateTime.now()));
+
             result = view.put(model).get();
+
+            view.putMany(List.of(model, model));
 
             result = view.get(model3).get();
 
