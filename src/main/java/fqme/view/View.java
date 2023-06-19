@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import fqme.column.Column;
@@ -47,6 +48,11 @@ public class View<T extends Model<T>> {
     private final StatementBuilder<T> statementBuilder;
 
     /**
+     * A query builder that is associated with this view.
+     */
+    private final QueryBuilder<T> queryBuilder;
+
+    /**
      * Create a view of model for given model class and connection.
      *
      * @param modelClass a model class
@@ -56,6 +62,7 @@ public class View<T extends Model<T>> {
     public View(Class<T> modelClass, Connection connection) throws SQLException {
         this.modelReflection = Model.getModelReflection(modelClass);
         this.statementBuilder = new StatementBuilder<>(this.modelReflection, connection);
+        this.queryBuilder = new QueryBuilder<>(this.modelReflection);
 
         createTable();
     }
@@ -81,7 +88,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> get(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+    public Set<T> getMany(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         PreparedStatement statement = statementBuilder.buildGetStatement(query);
         statement.execute();
 
@@ -94,6 +101,42 @@ public class View<T extends Model<T>> {
     }
 
     /**
+     * Get model from database by its primary keys.
+     *
+     * @param models a set of models
+     * @return a set of models
+     * @throws SQLException         if a database access error occurs
+     * @throws UnsupportedValueType if query contains argument with unsupported
+     *                              value type
+     */
+    public Set<T> getMany(Set<T> models) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+        Set<Query> queries = new HashSet<>();
+        for (T model : models) {
+            queries.add(queryBuilder.fetchPrimaryKeys(model));
+        }
+        return getMany(Query.or(queries));
+    }
+
+    /**
+     * Get model from database by it primary keys.
+     *
+     * @param model a model
+     * @return a model
+     * @throws SQLException         if a database access error occurs
+     * @throws UnsupportedValueType if query contains argument with unsupported
+     *                              value type
+     * @throws UnsupportedSqlType   if query contains argument with unsupported
+     */
+    public Optional<T> get(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+        Set<T> models = new HashSet<>(Arrays.asList(model));
+        models = getMany(models);
+        if (models.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(models.iterator().next());
+    }
+
+    /**
      * Delete models by a query.
      *
      * @param query a query
@@ -102,7 +145,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> delete(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+    public Set<T> deleteMany(Query query) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         PreparedStatement statement = statementBuilder.buildDeleteStatement(query);
         statement.execute();
 
@@ -115,6 +158,42 @@ public class View<T extends Model<T>> {
     }
 
     /**
+     * Delete models by its primary keys.
+     *
+     * @param models a set of models
+     * @return a set of deleted models
+     * @throws SQLException         if a database access error occurs
+     * @throws UnsupportedValueType if query contains argument with unsupported
+     *                              value type
+     */
+    public Set<T> deleteMany(Iterable<T> models) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+        List<Query> queries = new ArrayList<>();
+        for (T model : models) {
+            queries.add(queryBuilder.fetchPrimaryKeys(model));
+        }
+        Query query = Query.or(queries);
+        return this.deleteMany(query);
+    }
+
+    /**
+     * Delete model by its primary keys.
+     *
+     * @param model a model
+     * @return a set of deleted models
+     * @throws SQLException         if a database access error occurs
+     * @throws UnsupportedValueType if query contains argument with unsupported
+     *                              value type
+     */
+    public Optional<T> delete(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+        Set<T> models = new HashSet<>(Arrays.asList(model));
+        models = deleteMany(models);
+        if (models.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(models.iterator().next());
+    }
+
+    /**
      * Put a model.
      *
      * @param model a model
@@ -123,7 +202,7 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> put(Iterable<T> models) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+    public Set<T> putMany(Iterable<T> models) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
         Set<T> result = new HashSet<>();
         for (T model : models) {
             PreparedStatement statement = statementBuilder.buildPutStatement(model);
@@ -145,8 +224,12 @@ public class View<T extends Model<T>> {
      * @throws UnsupportedValueType if query contains argument with unsupported
      *                              value type
      */
-    public Set<T> put(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
-        return put(List.of(model));
+    public Optional<T> put(T model) throws SQLException, UnsupportedValueType, UnsupportedSqlType {
+        Set<T> result = putMany(Arrays.asList(model));
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.iterator().next());
     }
 
     /**
