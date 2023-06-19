@@ -2,6 +2,7 @@ package fqme.query;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import lombok.Data;
@@ -81,5 +82,37 @@ public class Query {
         this.whereClause = "(%s) OR (%s)".formatted(whereClause, other.whereClause);
         this.whereArgs.addAll(other.whereArgs);
         return this;
+    }
+
+    /**
+     * Join queries with AND operator.
+     *
+     * @param queries queries to join.
+     * @return this query with union of where clause and arguments.
+     * @see fqme.query.QueryArgument
+     */
+    public static Query and(Iterable<Query> queries) {
+        Iterator<Query> iterator = queries.iterator();
+        Query query = iterator.next();
+        while (iterator.hasNext()) {
+            query.and(iterator.next());
+        }
+        return query;
+    }
+
+    /**
+     * Join this queries with OR operator.
+     *
+     * @param queries queries to join.
+     * @return this query with union of where clause and arguments.
+     * @see fqme.query.QueryArgument
+     */
+    public static Query or(Iterable<Query> queries) {
+        Iterator<Query> iterator = queries.iterator();
+        Query query = iterator.next();
+        for (Query other : queries) {
+            query.or(other);
+        }
+        return query;
     }
 }
