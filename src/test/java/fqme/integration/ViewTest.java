@@ -9,6 +9,7 @@ import java.util.Set;
 import fqme.connection.ConnectionManager;
 import fqme.connection.DBConfig;
 import fqme.model.Model;
+import fqme.query.Query;
 import fqme.utils.LocationModel;
 import fqme.utils.TestModel;
 import fqme.view.View;
@@ -30,6 +31,7 @@ public class ViewTest {
         View<LocationModel> locationView = View.of(LocationModel.class, connection);
         View<TestModel> view = View.of(TestModel.class, connection);
 
+        Query.any(List.of(TestModel.id_.eq(10), TestModel.name_.eq("Alex")));
         Set<TestModel> result3 = view.getMany(TestModel.created_.after(LocalDateTime.now().minusDays(1)));
         for (int i = 0; i < 1000; i++) {
             LocationModel location = new LocationModel("New York", random.nextInt(20) - 20, random.nextInt(20) - 20);

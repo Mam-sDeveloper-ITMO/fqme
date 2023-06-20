@@ -91,7 +91,7 @@ public class Query {
      * @return this query with union of where clause and arguments.
      * @see fqme.query.QueryArgument
      */
-    public static Query and(Iterable<Query> queries) {
+    public static Query all(Iterable<Query> queries) {
         Iterator<Query> iterator = queries.iterator();
         Query query = iterator.next();
         while (iterator.hasNext()) {
@@ -107,11 +107,11 @@ public class Query {
      * @return this query with union of where clause and arguments.
      * @see fqme.query.QueryArgument
      */
-    public static Query or(Iterable<Query> queries) {
+    public static Query any(Iterable<Query> queries) {
         Iterator<Query> iterator = queries.iterator();
         Query query = iterator.next();
-        for (Query other : queries) {
-            query.or(other);
+        while (iterator.hasNext()) {
+            query.and(iterator.next());
         }
         return query;
     }
