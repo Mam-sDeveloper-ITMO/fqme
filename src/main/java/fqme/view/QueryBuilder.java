@@ -39,6 +39,6 @@ public class QueryBuilder<T extends Model<T>> {
                 queries.add(typedColumn.eq(value));
             }
         }
-        return Query.and(queries);
+        return Query.all(queries);
     }
 }

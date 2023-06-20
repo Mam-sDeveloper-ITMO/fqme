@@ -114,7 +114,7 @@ public class View<T extends Model<T>> {
         for (T model : models) {
             queries.add(queryBuilder.fetchPrimaryKeys(model));
         }
-        return getMany(Query.or(queries));
+        return getMany(Query.any(queries));
     }
 
     /**
@@ -171,7 +171,7 @@ public class View<T extends Model<T>> {
         for (T model : models) {
             queries.add(queryBuilder.fetchPrimaryKeys(model));
         }
-        Query query = Query.or(queries);
+        Query query = Query.any(queries);
         return this.deleteMany(query);
     }
 
